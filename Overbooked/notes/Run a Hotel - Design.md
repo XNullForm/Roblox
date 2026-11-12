@@ -873,6 +873,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
   ![[2026-11-10 grade up cutscene.jpg]]
 - [ ] Round 15 still to do: bigger gameplay changes for the other minigames (beds, showers, toilets, desk, cooking, repairs). The tailcoat, short jacket, tuxedo, waistcoat, polo and hi-vis vest are still built from parts
 - [x] Round 30: guests' hands on the desk, card, duvet, shower tap and flush
+- [x] Round 31: first optimisation pass (traffic stubs, roof watcher, far NPCs)
 - [ ] Next ideas: guests picking up and setting down their own bags; sofas, chairs, tables, TV and vending machine with real contact; footsteps on the heel strike
 
 ## Your preferences (this game)
@@ -992,6 +993,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 
 ## What you must do yourself
 - Round 30: the place is saved for you (version 345). Watch a guest check in, shower and go to bed, and tell me if any reach looks off.
+- Round 31: saved for you (version 346). Nothing to check unless the roof stops hiding while you build.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1058,6 +1060,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 
 ## Changelog
 - **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
+- **2026-11-12 (round 31): first optimisation pass.** Client scripts profiled (about 7 ms a frame before). Traffic cars lost 174 invisible pre-20b parts that were still moved every frame (Traffic 0.60 to 0.24 s per 6 s, BulkMoveTo 0.40 to 0.16). Roof no longer counts its descendants every frame. NPCAnim skips joint reads for far NPCs it already handed back.
   - [x] **Checking in:** both hands on the desk's counter, a finger drum, a look round the lobby.
   - [x] **Checking out:** a bank card slid across the counter and tapped (left hand, so a bag in the right still works).
   - [x] **Bed:** grabs the duvet, folds it back and pats the pillow before lying down.

@@ -476,6 +476,7 @@ local function step(st, now, dt, camPos, myHead)
 	local j = rig.j
 	if not (root and root.Parent) then return end
 	local dist = (root.Position - camPos).Magnitude
+	if not st.wrote and dist > (st.street and STREET_FAR + 10 or FAR) then return end -- round 31: far and already handed back
 
 	-- the base each joint starts from (the Animator's pose, or what was there before we wrote)
 	for k, m in pairs(j) do

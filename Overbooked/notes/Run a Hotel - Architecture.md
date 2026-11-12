@@ -527,3 +527,12 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Pose sheets for checking: clone a guest into a folder under the hotel, anchor it, set `Pose`, `WorkAt` and `AnimT` (freezes the time). Live guests move on too fast to screenshot.
 - Studio's Assistant blocks `HttpService` to localhost, so the 8791 push doesn't work from `execute_luau`; `multi_edit` with exact strings does.
 - Mirrors in `src15`: HotelSim, NPCAnimLib. Backup: `DevTools.Round30_Backup_20261112` (HotelSim, NPCAnimLib; the folder also holds LevelCommands, Plots and BuildServer from earlier the same day).
+## Round 31 (2026-11-12): optimisation pass 1
+- Measured on slot 1 in a playtest: about 60 fps, 96.7k instances, 12.4k parts, 306 lights, 2.4 GB, 3.5k Lua threads, 861k triangles.
+- Client profile (ScriptProfilerService, 6 s): NPCAnim step about 1.1 s, Traffic 0.6, Doors 0.2, Roof 0.2, Perf 0.1.
+- Traffic (live only): spawnCar destroys invisible childless parts except Glow (it carries the SpotLight). The wheel parts were all invisible, so wheel lists are now empty. Cars went from 206 to 32 parts.
+- Roof (live only): the RoofStamp attribute and the per-frame `#roof:GetDescendants()` are gone. A `watch(roof)` connects DescendantAdded/Removing to a dirty flag and reconnects when the Roof instance changes.
+- NPCAnim: early return before the joint Transform reads when an NPC is past FAR and `st.wrote` is false.
+- Backups: ServerStorage.DevTools.Round31_Backup_20261112 (Traffic, Roof, NPCAnim, Doors, Perf).
+- Not done yet: server profile (HotelSim, Crowds), NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
+
