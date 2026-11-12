@@ -534,5 +534,6 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Roof (live only): the RoofStamp attribute and the per-frame `#roof:GetDescendants()` are gone. A `watch(roof)` connects DescendantAdded/Removing to a dirty flag and reconnects when the Roof instance changes.
 - NPCAnim: early return before the joint Transform reads when an NPC is past FAR and `st.wrote` is false.
 - Backups: ServerStorage.DevTools.Round31_Backup_20261112 (Traffic, Roof, NPCAnim, Doors, Perf).
-- Not done yet: server profile (HotelSim, Crowds), NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
+- Server profile (10 s, slot 1): about 0.35 s of script time in total (Plots 0.17, Crowds 0.13, HotelSim guest/staff loops under 0.1 each), heartbeat 0.33 ms, physics 1.5 ms. Nothing worth fixing.
+- Not done yet: NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
 
