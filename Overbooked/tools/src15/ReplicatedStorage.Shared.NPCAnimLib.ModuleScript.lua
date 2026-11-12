@@ -755,6 +755,65 @@ Lib.POSES = {
 		keys[#keys + 1] = { 7.2, first }
 		return keys
 	end)() },
+	-- round 30: guests on the real things too (same WorkAt contract as the staff poses above)
+	-- at the desk while served: both hands on the counter, a finger drum, a look round the lobby
+	counter = { len = 5.0, anchor = { R = true, L = true }, noLean = true, pole = { R = { 1, -1, 0.4 }, L = { 1, -1, 0.4 } }, keys = {
+		{ 0.0, { R = h(0.42, 0.04, 0.2), L = h(-0.42, 0.04, 0.2), nx = -0.08, ny = 0 } },
+		{ 0.9, { R = h(0.42, 0.14, 0.18) } }, { 1.02, { R = h(0.42, 0.04, 0.2) } },
+		{ 1.14, { R = h(0.42, 0.14, 0.18) } }, { 1.26, { R = h(0.42, 0.04, 0.2) } },
+		{ 1.38, { R = h(0.42, 0.14, 0.18) } }, { 1.5, { R = h(0.42, 0.04, 0.2) } },
+		{ 2.4, { ny = 0.32, nx = 0 } },
+		{ 3.3, { ny = 0.28 } },
+		{ 4.1, { ny = 0, nx = -0.08 } },
+		{ 5.0, { R = h(0.42, 0.04, 0.2), L = h(-0.42, 0.04, 0.2), nx = -0.08, ny = 0 } },
+	} },
+	-- paying at the desk: the card slid across the counter in the left hand, a tap on it, then waiting with it
+	pay = { len = 4.2, anchor = { R = true, L = true }, noLean = true, prop = "Card", pole = { R = { 1, -1, 0.4 }, L = { 1, -1, 0.4 } }, keys = {
+		{ 0.0, { R = h(0.42, 0.04, 0.25), L = h(-0.3, 0.06, 0.3), nx = -0.12, ny = 0 } },
+		{ 0.7, { L = h(-0.15, 0.04, -0.3), nx = -0.2 } },
+		{ 1.0, { L = h(-0.15, 0.1, -0.3) } }, { 1.15, { L = h(-0.15, 0.04, -0.3) } },
+		{ 1.6, { L = h(-0.2, 0.06, 0.05), nx = -0.1 } },
+		{ 2.8, { ny = 0.2 } },
+		{ 3.6, { ny = 0 } },
+		{ 4.2, { R = h(0.42, 0.04, 0.25), L = h(-0.3, 0.06, 0.3), nx = -0.12, ny = 0 } },
+	} },
+	-- before bed: grab the duvet's edge, lift and fold it back, smooth the sheet, a pat on the pillow
+	turndown = { len = 2.6, anchor = { R = true, L = true }, pole = { R = { 1, -0.3, 0.7 }, L = { 1, -0.3, 0.7 } }, keys = {
+		{ 0.0, { R = h(0.4, 0.1, 0.25), L = h(-0.4, 0.1, 0.25), nx = -0.3 } },
+		{ 0.5, { R = h(0.45, 0.55, 0.45), L = h(-0.45, 0.55, 0.45), nx = -0.18 } },
+		{ 0.95, { R = h(0.5, 0.12, 0.8), L = h(-0.5, 0.12, 0.8), nx = -0.32 } },
+		{ 1.5, { R = h(0.9, 0.08, -0.1), L = h(-0.9, 0.08, -0.1) } },
+		{ 1.9, { R = h(1.2, 0.3, 0.0), L = h(-0.3, 0.1, 0.3) } },
+		{ 2.05, { R = h(1.2, 0.1, 0.0) } },
+		{ 2.6, { R = h(0.4, 0.1, 0.25), L = h(-0.4, 0.1, 0.25), nx = -0.3 } },
+	} },
+	-- in the shower: reach to the wall and turn the tap (on, and again off)
+	tap = { len = 1.2, anchor = { R = true }, noLean = true, pole = { R = { 1, -0.6, 0.5 } }, keys = {
+		{ 0.0, { R = h(0.35, -0.2, 0.6), rwz = 0, nx = -0.05 } },
+		{ 0.4, { R = h(0.35, -0.2, 0.12), rwz = 0 } },
+		{ 0.75, { rwz = 0.9 } },
+		{ 1.2, { R = h(0.35, -0.2, 0.12), rwz = 0.9, nx = -0.05 } },
+	} },
+	-- washing the hair: both hands on the head, scrubbing, head down into the water now and then
+	wash = { len = 3.2, pole = { R = { 1, -0.6, 0.1 }, L = { 1, -0.6, 0.1 } }, keys = {
+		{ 0.0, { R = h(-0.16, 0.52, -0.04), L = h(-0.16, 0.52, -0.04), nx = -0.1, ny = 0 } },
+		{ 0.3, { R = h(-0.1, 0.55, 0.02), L = h(-0.2, 0.5, -0.08) } },
+		{ 0.6, { R = h(-0.2, 0.5, -0.08), L = h(-0.1, 0.55, 0.02) } },
+		{ 0.9, { R = h(-0.1, 0.55, 0.02), L = h(-0.2, 0.5, -0.08) } },
+		{ 1.2, { R = h(-0.2, 0.5, -0.08), L = h(-0.1, 0.55, 0.02), nx = -0.25 } },
+		{ 1.8, { nx = 0.15, ny = 0.1 } },
+		{ 2.3, { R = h(-0.12, 0.54, 0.0), L = h(-0.12, 0.54, 0.0), nx = 0.1, ny = -0.1 } },
+		{ 2.8, { R = h(-0.18, 0.51, -0.05), L = h(-0.18, 0.51, -0.05), ny = 0 } },
+		{ 3.2, { R = h(-0.16, 0.52, -0.04), L = h(-0.16, 0.52, -0.04), nx = -0.1, ny = 0 } },
+	} },
+	-- standing up from the toilet: a reach to the cistern and a push on the flush
+	flush = { len = 1.4, anchor = { R = true }, pole = { R = { 1, -0.6, 0.5 } }, keys = {
+		{ 0.0, { R = h(0.25, 0.25, 0.5), nx = -0.25 } },
+		{ 0.45, { R = h(0.2, 0.08, 0.0) } },
+		{ 0.6, { R = h(0.2, -0.04, 0.0) } },
+		{ 0.8, { R = h(0.2, 0.08, 0.0) } },
+		{ 1.4, { R = h(0.2, 0.08, 0.0), nx = -0.25 } },
+	} },
 	-- seated and chatting: hands on the lap, gestures now and then
 	sitchat = { len = 5, pole = { R = POLE_FRONT, L = POLE_FRONT }, keys = {
 		{ 0.0, { R = h(-0.25, -0.72, -0.5), L = h(-0.25, -0.73, -0.5), ny = 0 } },
@@ -1038,7 +1097,7 @@ end
 
 -- builds a prop welded to the given hand; returns the model
 function Lib.prop(kind, model)
-	local handName = (kind == "PhoneL" or kind == "Clipboard") and "LeftHand" or "RightHand"
+	local handName = (kind == "PhoneL" or kind == "Clipboard" or kind == "Card") and "LeftHand" or "RightHand"
 	local hand = model:FindFirstChild(handName)
 	if not hand then return nil end
 	local m = Instance.new("Model")
@@ -1101,6 +1160,12 @@ function Lib.prop(kind, model)
 			weld(left, pan, CF(0, -1.35, 0) * ANG(0, math.rad(90), 0))
 			weld(left, food, CF(0, -1.35, -0.1) * ANG(0, math.rad(90), 0))
 		end
+	elseif kind == "Card" then
+		-- a bank card flat under the left fingers (left hand: a bag in the right still works)
+		local card = part("Card", V3(0.5, 0.03, 0.32), Color3.fromRGB(46, 96, 176), Enum.Material.SmoothPlastic, m)
+		local chip = part("Chip", V3(0.09, 0.01, 0.07), Color3.fromRGB(222, 186, 96), Enum.Material.Metal, m)
+		weld(card, chip, CF(-0.12, 0.02, 0.02))
+		weld(hand, card, CF(0, -0.22, -0.08))
 	elseif kind == "CleanKit" then
 		-- a folded cloth flat under the right palm, a spray bottle in the left hand
 		local cloth = part("Cloth", V3(0.62, 0.1, 0.5), Color3.fromRGB(120, 196, 236), Enum.Material.Fabric, m)

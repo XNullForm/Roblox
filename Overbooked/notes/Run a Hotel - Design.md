@@ -872,6 +872,8 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
   ![[2026-11-10 minigame compost.jpg]]
   ![[2026-11-10 grade up cutscene.jpg]]
 - [ ] Round 15 still to do: bigger gameplay changes for the other minigames (beds, showers, toilets, desk, cooking, repairs). The tailcoat, short jacket, tuxedo, waistcoat, polo and hi-vis vest are still built from parts
+- [x] Round 30: guests' hands on the desk, card, duvet, shower tap and flush
+- [ ] Next ideas: guests picking up and setting down their own bags; sofas, chairs, tables, TV and vending machine with real contact; footsteps on the heel strike
 
 ## Your preferences (this game)
 - Round 21 (2026-11-12):
@@ -989,6 +991,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Round 2: picked "Build mode" ("Next add build mode so I can place and buy furniture and new rooms").
 
 ## What you must do yourself
+- Round 30: the place is saved for you (version 345). Watch a guest check in, shower and go to bed, and tell me if any reach looks off.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1054,6 +1057,17 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Not checked: the round prompt buttons don't show in my screenshots (Studio's capture skips them), though I tested pressing all of them.
 
 ## Changelog
+- **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
+  - [x] **Checking in:** both hands on the desk's counter, a finger drum, a look round the lobby.
+  - [x] **Checking out:** a bank card slid across the counter and tapped (left hand, so a bag in the right still works).
+  - [x] **Bed:** grabs the duvet, folds it back and pats the pillow before lying down.
+  - [x] **Shower:** steps in facing the wall, turns the tap on, washes their hair, turns it off.
+  - [x] **Toilet:** stands up, turns round and presses the flush (the flush sound plays on the press).
+  - Fixed on the way: the desk's guest ledge sticks out past the panel under it, so guests stopped short; their hands now aim mid-ledge and they stand upright.
+  - Checked in a playtest on your save: real guests ran every new pose, no errors. A frozen stand-in at a real desk, bed, shower and toilet: hands land on the counter, the duvet, the tap (0.57 studs) and the flush (0.24 studs).
+  - Not checked: a whole stay watched start to finish, the shower on camera (the bathroom is too tight to film), touch and controller.
+  ![[2026-11-12 guest at desk.jpg]]
+  ![[2026-11-12 guest turndown.jpg]]
 - **2026-11-12 (round 29): the hotel front, tidied.**
   - [x] **Car park:** the tall white wall on the street side is now a low kerb with a driveway down to the pavement and a P sign. The dirt trench between the car park and the pavement is paved over.
   - [x] **Beside the entrance path:** the lumpy bare ground is paved level with the path. The benches stand on it.

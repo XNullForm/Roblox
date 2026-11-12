@@ -58,7 +58,7 @@ Not included: `export/` (156 MB of built meshes/textures, rebuilt by the tools) 
 | `src15/ReplicatedFirst.Loading.LocalScript.lua` | 162 | ReplicatedFirst.Loading (round 21, 2026-11-12): the loading screen, remade plain and calm. |
 | `src15/ReplicatedStorage.Shared.Build.ModuleScript.lua` | 497 | ReplicatedStorage.Shared.Build: placement rules shared by the client (live ghost tint) and the server (the real check). |
 | `src15/ReplicatedStorage.Shared.Faces.ModuleScript.lua` | 214 | ReplicatedStorage.Shared.Faces (round 16, 2026-11-10): faces that move, now with real variety. |
-| `src15/ReplicatedStorage.Shared.NPCAnimLib.ModuleScript.lua` | 1127 | Shared.NPCAnimLib (round 14): hand-keyed procedural animation for every hotel NPC (guests and staff). |
+| `src15/ReplicatedStorage.Shared.NPCAnimLib.ModuleScript.lua` | 1192 | Shared.NPCAnimLib (round 14): hand-keyed procedural animation for every hotel NPC (guests and staff). |
 | `src15/ReplicatedStorage.Shared.RoomPlan.ModuleScript.lua` | 390 | ReplicatedStorage.Shared.RoomPlan (round 15): lays a room kit out inside a walled rectangle. |
 | `src15/ReplicatedStorage.Shared.Speech.ModuleScript.lua` | 243 | ReplicatedStorage.Shared.Speech (round 15, 2026-11-09): people really talk. |
 | `src15/ReplicatedStorage.Shared.UI.ModuleScript.lua` | 1279 | ReplicatedStorage.Shared.UI (round 21, 2026-11-12): the shared look and motion of every screen. |
@@ -68,7 +68,7 @@ Not included: `export/` (156 MB of built meshes/textures, rebuilt by the tools) 
 | `src15/ServerScriptService.Upgrades.Script.lua` | 65 | ServerScriptService.Upgrades (round 20): buys hotel upgrades (Shared.Upgrades) for the Upgrades tab. |
 | `src15/ServerStorage.Conversations.ModuleScript.lua` | 701 | ServerStorage.Conversations (round 15, 2026-11-09): real conversations with guests and staff. |
 | `src15/ServerStorage.DevTools.Tmp_GEStars.ModuleScript.lua` | 245 |  |
-| `src15/ServerStorage.HotelSim.ModuleScript.lua` | 5150 | ServerStorage.HotelSim: runs one hotel. Rooms, guests, cleaning, cash, doors, staff, upgrades. |
+| `src15/ServerStorage.HotelSim.ModuleScript.lua` | 5203 | ServerStorage.HotelSim: runs one hotel. Rooms, guests, cleaning, cash, doors, staff, upgrades. |
 | `src15/ServerStorage.HotelSkin.ModuleScript.lua` | 325 | ServerStorage.HotelSkin (round 20, 2026-11-11): how a hotel looks for its look stage (Shared.Upgrades.look): |
 | `src15/ServerStorage.Kitchen.ModuleScript.lua` | 501 | ServerStorage.Kitchen (round 10c): meals. The kitchen opens at hotel level 3 once the hotel has a Stove |
 | `src15/ServerStorage.Upkeep.ModuleScript.lua` | 922 | ServerStorage.Upkeep (round 11): things that go wrong, and the little jobs round the hotel. |
@@ -1102,6 +1102,8 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
   ![2026-11-10 minigame compost.jpg](Overbooked/media/2026-11-10%20minigame%20compost.jpg)
   ![2026-11-10 grade up cutscene.jpg](Overbooked/media/2026-11-10%20grade%20up%20cutscene.jpg)
 - [ ] Round 15 still to do: bigger gameplay changes for the other minigames (beds, showers, toilets, desk, cooking, repairs). The tailcoat, short jacket, tuxedo, waistcoat, polo and hi-vis vest are still built from parts
+- [x] Round 30: guests' hands on the desk, card, duvet, shower tap and flush
+- [ ] Next ideas: guests picking up and setting down their own bags; sofas, chairs, tables, TV and vending machine with real contact; footsteps on the heel strike
 
 ### Your preferences (this game)
 - Round 21 (2026-11-12):
@@ -1219,6 +1221,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Round 2: picked "Build mode" ("Next add build mode so I can place and buy furniture and new rooms").
 
 ### What you must do yourself
+- Round 30: the place is saved for you (version 345). Watch a guest check in, shower and go to bed, and tell me if any reach looks off.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1284,6 +1287,17 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Not checked: the round prompt buttons don't show in my screenshots (Studio's capture skips them), though I tested pressing all of them.
 
 ### Changelog
+- **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
+  - [x] **Checking in:** both hands on the desk's counter, a finger drum, a look round the lobby.
+  - [x] **Checking out:** a bank card slid across the counter and tapped (left hand, so a bag in the right still works).
+  - [x] **Bed:** grabs the duvet, folds it back and pats the pillow before lying down.
+  - [x] **Shower:** steps in facing the wall, turns the tap on, washes their hair, turns it off.
+  - [x] **Toilet:** stands up, turns round and presses the flush (the flush sound plays on the press).
+  - Fixed on the way: the desk's guest ledge sticks out past the panel under it, so guests stopped short; their hands now aim mid-ledge and they stand upright.
+  - Checked in a playtest on your save: real guests ran every new pose, no errors. A frozen stand-in at a real desk, bed, shower and toilet: hands land on the counter, the duvet, the tap (0.57 studs) and the flush (0.24 studs).
+  - Not checked: a whole stay watched start to finish, the shower on camera (the bathroom is too tight to film), touch and controller.
+  ![2026-11-12 guest at desk.jpg](Overbooked/media/2026-11-12%20guest%20at%20desk.jpg)
+  ![2026-11-12 guest turndown.jpg](Overbooked/media/2026-11-12%20guest%20turndown.jpg)
 - **2026-11-12 (round 29): the hotel front, tidied.**
   - [x] **Car park:** the tall white wall on the street side is now a low kerb with a driveway down to the pavement and a P sign. The dirt trench between the car park and the pavement is paved over.
   - [x] **Beside the entrance path:** the lumpy bare ground is paved level with the path. The benches stand on it.
@@ -2059,4 +2073,15 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - `HotelSim.parkCar` scales a guest car (`ScaleTo`) to at most 14.6 x 6.4 studs.
 - Car paints (140,30,40) and (30,60,110) became (206,84,84) and (70,120,200) in `Traffic` and `MapBuilder`; the parked cars in `City.Parked` were repainted.
 - Backup: `DevTools.Round29_Backup_20261112` (HotelBuilder, MapBuilder, Traffic, HotelSim).
+
+### Round 30 (2026-11-12): guests on the real things
+- Same contract as round 27 (`WorkAt` + anchored poses). New poses in `Shared.NPCAnimLib`: `counter`, `pay` (prop `Card`, welded to the **left** hand so `Lib.CARRY` can keep the right), `turndown`, `tap`, `flush` (anchored) and `wash` (body space, hands on the head).
+- **HotelSim:**
+  - `deskService` is now `local deskService do ... end` (no new top-level local): the old body is the inner `serve`; the wrapper finds the nearest `Build.desks(HOTEL)` within 7 studs, calls `evCtx.workStart(g, desk, "top", -0.05, 3.4)`, plays `@counter` (check in) or `@pay` (check out) and always ends with `workEnd`.
+  - Desk geometry: the guest `Ledge` (front 1.64, top 3.69 above the floor) overhangs the `Inset` panel (front 1.26) that `workPoint`'s floor+1.3 ray hits. Guests stop against the ledge about 0.4 short, so the inset is -0.05 (mid-ledge) and `counter` / `pay` are `noLean` (leaning can't reach a chest-high point; it folds them over the counter).
+  - `stayIn` Toilet: unpose facing the toilet, `workStart(..., "top", 1.2, 2.6)` + `@flush`, the flush sfx 0.6 s in. Shower: `workStart(..., "inside")` (falls back to the old `pose`), `@tap`, water on, `@wash`, `@tap`, water off, `workEnd`. Bed: `workStart(..., "top", 0.8, 2.4)` + `@turndown` for 2.6 s before the lie pose.
+- `workStart`'s walk stops within 0.45 studs (or 1.8 s), so guests usually stand about 0.5 short; non-`noLean` poses make it up by leaning.
+- Pose sheets for checking: clone a guest into a folder under the hotel, anchor it, set `Pose`, `WorkAt` and `AnimT` (freezes the time). Live guests move on too fast to screenshot.
+- Studio's Assistant blocks `HttpService` to localhost, so the 8791 push doesn't work from `execute_luau`; `multi_edit` with exact strings does.
+- Mirrors in `src15`: HotelSim, NPCAnimLib. Backup: `DevTools.Round30_Backup_20261112` (HotelSim, NPCAnimLib; the folder also holds LevelCommands, Plots and BuildServer from earlier the same day).
 

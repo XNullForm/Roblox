@@ -516,3 +516,14 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - `HotelSim.parkCar` scales a guest car (`ScaleTo`) to at most 14.6 x 6.4 studs.
 - Car paints (140,30,40) and (30,60,110) became (206,84,84) and (70,120,200) in `Traffic` and `MapBuilder`; the parked cars in `City.Parked` were repainted.
 - Backup: `DevTools.Round29_Backup_20261112` (HotelBuilder, MapBuilder, Traffic, HotelSim).
+
+## Round 30 (2026-11-12): guests on the real things
+- Same contract as round 27 (`WorkAt` + anchored poses). New poses in `Shared.NPCAnimLib`: `counter`, `pay` (prop `Card`, welded to the **left** hand so `Lib.CARRY` can keep the right), `turndown`, `tap`, `flush` (anchored) and `wash` (body space, hands on the head).
+- **HotelSim:**
+  - `deskService` is now `local deskService do ... end` (no new top-level local): the old body is the inner `serve`; the wrapper finds the nearest `Build.desks(HOTEL)` within 7 studs, calls `evCtx.workStart(g, desk, "top", -0.05, 3.4)`, plays `@counter` (check in) or `@pay` (check out) and always ends with `workEnd`.
+  - Desk geometry: the guest `Ledge` (front 1.64, top 3.69 above the floor) overhangs the `Inset` panel (front 1.26) that `workPoint`'s floor+1.3 ray hits. Guests stop against the ledge about 0.4 short, so the inset is -0.05 (mid-ledge) and `counter` / `pay` are `noLean` (leaning can't reach a chest-high point; it folds them over the counter).
+  - `stayIn` Toilet: unpose facing the toilet, `workStart(..., "top", 1.2, 2.6)` + `@flush`, the flush sfx 0.6 s in. Shower: `workStart(..., "inside")` (falls back to the old `pose`), `@tap`, water on, `@wash`, `@tap`, water off, `workEnd`. Bed: `workStart(..., "top", 0.8, 2.4)` + `@turndown` for 2.6 s before the lie pose.
+- `workStart`'s walk stops within 0.45 studs (or 1.8 s), so guests usually stand about 0.5 short; non-`noLean` poses make it up by leaning.
+- Pose sheets for checking: clone a guest into a folder under the hotel, anchor it, set `Pose`, `WorkAt` and `AnimT` (freezes the time). Live guests move on too fast to screenshot.
+- Studio's Assistant blocks `HttpService` to localhost, so the 8791 push doesn't work from `execute_luau`; `multi_edit` with exact strings does.
+- Mirrors in `src15`: HotelSim, NPCAnimLib. Backup: `DevTools.Round30_Backup_20261112` (HotelSim, NPCAnimLib; the folder also holds LevelCommands, Plots and BuildServer from earlier the same day).

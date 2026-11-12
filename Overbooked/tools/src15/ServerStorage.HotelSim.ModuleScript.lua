@@ -2085,7 +2085,9 @@ end
 
 -- serve a guest at the desk: a receptionist handles it automatically, but with no
 -- receptionist the player has to interact with the guest to check them in or out
-local function deskService(g, secs, action)
+local deskService
+do
+local function serve(g, secs, action)
 	-- round 13: receptionists on shift take their time (C.CLERK_SLOW); levels, research, their focus and every
 	-- extra receptionist speed the desk up (evCtx.deskPace). Nobody on shift: the player serves the desk
 	local dp = evCtx and evCtx.deskPace and evCtx.deskPace(action)
@@ -2193,6 +2195,26 @@ local function deskService(g, secs, action)
 		return true
 	end
 	return false
+end
+-- round 30: while served the guest has their hands on the nearest desk's counter (check-in) or slides a card
+-- over it (check-out); Shared.NPCAnimLib `counter` / `pay`, through the round 27 WorkAt contract
+deskService = function(g, secs, action)
+	local desk, bd
+	for _, d in ipairs(Build.desks(HOTEL)) do
+		local dd = flat(d:GetPivot().Position - g.root.Position).Magnitude
+		if dd < 7 and (not bd or dd < bd) then desk, bd = d, dd end
+	end
+	local pn = action == "Check In" and "@counter" or "@pay"
+	-- inset -0.05: the guest ledge overhangs the lower panel the ray hits, so this lands mid-ledge
+	local on = desk and not g.posed and evCtx.workStart(g, desk, "top", -0.05, 3.4)
+	if on then play(g, pn) end
+	local ok = serve(g, secs, action)
+	if on then
+		stop(g, pn)
+		evCtx.workEnd(g)
+	end
+	return ok
+end
 end
 
 -- put a booked room back on the market when a guest abandons it before checking in
@@ -2718,22 +2740,46 @@ local function stayIn(g, room)
 			pose(g, coreSpot(room, "Toilet", "sit"))
 			play(g, "sit", 0.2)
 			timed(g, secs)
-			sfx("flush", piv.Position)
 			stop(g, "sit", 0.2)
-			unpose(g, CFrame.lookAt(front, front + flat(front - piv.Position)))
+			-- round 30: up, turn round and push the flush
+			unpose(g, CFrame.lookAt(front, front + flat(piv.Position - front)))
+			local on = evCtx.workStart(g, core(room, "Toilet"), "top", 1.2, 2.6)
+			if on then play(g, "@flush") task.wait(0.6) end
+			sfx("flush", piv.Position)
+			if on then
+				task.wait(0.7)
+				stop(g, "@flush")
+				evCtx.workEnd(g)
+			end
 		elseif act == "Shower" then
 			status(g, "walk", "Shower")
 			local piv = core(room, "Shower"):GetPivot()
 			local front = coreSpot(room, "Shower", "front")
 			walkTo(g, front)
 			faceTo(g, piv.Position)
-			pose(g, coreSpot(room, "Shower", "inside"))
+			-- round 30: stood inside facing the wall (as the janitor's wipe), tap on, wash the hair, tap off
+			local on = evCtx.workStart(g, core(room, "Shower"), "inside")
+			if on then
+				play(g, "@tap")
+				task.wait(0.9)
+			else
+				pose(g, coreSpot(room, "Shower", "inside"))
+			end
 			room.water.Enabled = true
 			room.steam.Enabled = true
 			status(g, "shower", "Shower", "blue")
+			if on then play(g, "@wash") end
 			timed(g, secs)
+			if on then
+				play(g, "@tap")
+				task.wait(0.9)
+			end
 			room.water.Enabled = false
 			room.steam.Enabled = false
+			if on then
+				stop(g, "@tap")
+				evCtx.workEnd(g)
+			end
 			unpose(g, CFrame.lookAt(front, front + flat(front - piv.Position)))
 		elseif act == "Outing" then
 			status(g, "walk", "Heading out")
@@ -2767,6 +2813,13 @@ local function stayIn(g, room)
 			local bedPos = core(room, "Bed"):GetPivot().Position
 			walkTo(g, side)
 			faceTo(g, bedPos)
+			-- round 30: turn the duvet down first
+			if evCtx.workStart(g, core(room, "Bed"), "top", 0.8, 2.4) then
+				play(g, "@turndown")
+				task.wait(2.6)
+				stop(g, "@turndown")
+				evCtx.workEnd(g)
+			end
 			status(g, "sleep", "Sleeping", "purple")
 			setSign(room, "Sleep")
 			g.sleepCF = coreSpot(room, "Bed", "lie")
