@@ -68,19 +68,19 @@ local function plate(parent, props)
 	f.BackgroundTransparency = 0
 	f.Parent = parent
 	UI.corner(f, radius or 18)
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(236, 232, 252)), Parent = f })
-	UI.rim(f, Color3.fromRGB(206, 198, 244), 2.5)
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(247, 249, 252)), Parent = f })
+	UI.rim(f, Color3.fromRGB(233, 237, 244), 2.5)
 	return f
 end
 
-local CARD_RIM = Color3.fromRGB(204, 196, 244)
+local CARD_RIM = Color3.fromRGB(232, 237, 244)
 -- a clickable glossy card on a deep shadow: returns the button (scale / tooltips go on it) and its body
 local function hudCard(parent, name, size, pos, onClick, radius)
 	local b = UI.new("TextButton", { Name = name, Text = "", AutoButtonColor = false, Size = size, Position = pos, BackgroundTransparency = 1, Parent = parent })
 	UI.shadow(b, { drop = 7, transparency = 0.6 })
 	local body = UI.new("Frame", { Name = "Body", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.ink, Parent = b })
 	UI.corner(body, radius or 20)
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(232, 228, 250)), Parent = body })
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = body })
 	UI.rim(body, CARD_RIM, 2.5)
 	local g = UI.gloss(body, radius or 20, 0.6)
 	g.Size = UDim2.new(1, -8, 0.45, 0)
@@ -107,11 +107,11 @@ end
 -- a recessed track (the XP bar, the day bar)
 local function track(parent, props, color)
 	local tr = UI.new("Frame", props)
-	tr.BackgroundColor3 = Color3.fromRGB(226, 222, 246)
+	tr.BackgroundColor3 = Color3.fromRGB(240, 242, 246)
 	tr.Parent = parent
 	UI.corner(tr, UDim.new(0.5, 0))
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(196, 190, 222), Color3.new(1, 1, 1)), Parent = tr })
-	UI.rim(tr, Color3.fromRGB(196, 188, 236), 1.5)
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(214, 217, 222), Color3.new(1, 1, 1)), Parent = tr })
+	UI.rim(tr, Color3.fromRGB(224, 229, 236), 1.5)
 	local fill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = color, ClipsDescendants = true, ZIndex = tr.ZIndex + 1, Parent = tr })
 	UI.corner(fill, UDim.new(0.5, 0))
 	UI.sheen(fill)
@@ -122,116 +122,173 @@ end
 
 local function openMenu(tab) player:SetAttribute("MenuWant", tab) end
 
-local cornerGroup = group("Corner", UDim2.fromOffset(356, 104), PHONE and UDim2.new(0, 16, 1, -18) or UDim2.fromOffset(16, 64), PHONE and Vector2.new(0, 1) or Vector2.new(0, 0), PHONE and UDim2.new(0, -460, 1, -18) or UDim2.fromOffset(-440, 64))
+-- round 34: the plates are white and glossy like the chapter goals, with 3D icons, and the top sits at the very top.
+-- round 21 (2026-11-12): the top of the HUD. Left: the hotel plate (level tile, name, stars,
+-- XP line). Centre: cash and guests. Right: a real clock: a white dial with ticks and two hands that turns navy at
+-- night, with the weather and the digital time inside it, and the day and season on a tab beside it.
+local cornerGroup = group("Corner", UDim2.fromOffset(330, 66), PHONE and UDim2.new(0, 16, 1, -18) or UDim2.fromOffset(16, 58), PHONE and Vector2.new(0, 1) or Vector2.new(0, 0), PHONE and UDim2.new(0, -460, 1, -18) or UDim2.fromOffset(-440, 58))
 local topGroup = group("Top", UDim2.fromOffset(484, 80), UDim2.new(0.5, 0, 0, 10), Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, -130))
-local clockGroup = group("Clock", UDim2.fromOffset(236, 80), UDim2.new(1, -16, 0, 10), Vector2.new(1, 0), UDim2.new(1, 280, 0, 10))
+local clockGroup = group("Clock", UDim2.fromOffset(264, 104), UDim2.new(1, -16, 0, 8), Vector2.new(1, 0), UDim2.new(1, 300, 0, 8))
+
+local G = UI.G
+-- a glossy white plate you can click (the chapter goals' look): returns the button and its body
+local function glass(parent, name, size, pos, onClick, radius)
+	local b = UI.new("TextButton", { Name = name, Text = "", AutoButtonColor = false, Size = size, Position = pos, BackgroundTransparency = 1, Parent = parent })
+	UI.shadow(b, { drop = 5, transparency = 0.7 })
+	local body = UI.new("Frame", { Name = "Body", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.ink, Parent = b })
+	UI.corner(body, (radius or 12) + 4)
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = body })
+	UI.rim(body, CARD_RIM, 2.5)
+	if onClick then
+		local sc = UI.scaleOf(b)
+		b.MouseEnter:Connect(function() UI.tween(sc, 0.18, { Scale = 1.04 }, Enum.EasingStyle.Back) end)
+		b.MouseLeave:Connect(function() UI.tween(sc, 0.2, { Scale = 1 }, Enum.EasingStyle.Quint) end)
+		b.Activated:Connect(function()
+			UI.sound("Click")
+			onClick()
+		end)
+	end
+	return b, body
+end
+-- a rounded colour tile with a white glyph in it; round 34: cash and guests get their 3D icon instead
+local ICON3D = { [G.cash] = ICON.cash, [G.guest] = ICON.guest }
+local function glyphTile(parent, size, color, pos, image, glyphSize)
+	if ICON3D[image] then
+		local t = UI.new("Frame", { Name = "Tile", Size = UDim2.fromOffset(size, size), Position = pos, BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
+		return t, UI.icon(t, ICON3D[image], math.floor(size * 1.3), { Name = "Icon", Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 4 })
+	end
+	local t = UI.new("Frame", { Name = "Tile", Size = UDim2.fromOffset(size, size), Position = pos, BackgroundColor3 = color, ZIndex = 3, Parent = parent })
+	UI.corner(t, math.floor(size * 0.28))
+	local ic = UI.new("ImageLabel", { Name = "Icon", Image = image, ImageColor3 = T.white, Size = UDim2.fromOffset(glyphSize, glyphSize), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 4, Parent = t })
+	return t, ic
+end
 
 ---------------------------------------------------------------- your hotel: level, name, stars, XP
 
-local lvSlot, lvBody = hudCard(cornerGroup, "Level", UDim2.new(1, -30, 0, 88), UDim2.fromOffset(30, 6), function() openMenu("hotel") end, 22)
--- the level badge: a big glossy violet disc hanging off the card's left end, glowing softly
-local lvHolder = UI.new("Frame", { Name = "LvHolder", Size = UDim2.fromOffset(84, 84), Position = UDim2.new(0, 0, 0, 8), BackgroundTransparency = 1, ZIndex = 3, Parent = cornerGroup })
-UI.glow(lvHolder, 150, T.brand, { ImageTransparency = 0.55 })
-local lvTile = UI.badge(lvHolder, 84, T.brand, nil, { Name = "Lv", Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3 })
-local lvPat = UI.new("ImageLabel", { Image = UI.IMG.plus, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(28, 28), Size = UDim2.fromScale(1, 1), ImageTransparency = 0.86, ZIndex = 4, Parent = lvTile })
-UI.corner(lvPat, UDim.new(0.5, 0))
-local lvCap = UI.label(lvTile, "LEVEL", 12, { FontFace = UI.F.display, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 13), Size = UDim2.new(1, 0, 0, 13), ZIndex = 7 })
-UI.textStroke(lvCap, 1.5, 0, T.brandDk)
-local levelNum = UI.label(lvTile, "1", 36, { FontFace = UI.F.display, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 40), ZIndex = 7 })
-UI.textStroke(levelNum, 3, 0, T.brandDk)
+local lvSlot, lvBody = glass(cornerGroup, "Level", UDim2.fromScale(1, 1), UDim2.new(), function() openMenu("hotel") end, 14)
+local lvHolder = UI.new("Frame", { Name = "LvHolder", Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(10, 10), BackgroundTransparency = 1, ZIndex = 3, Parent = cornerGroup })
+local lvTile = UI.new("Frame", { Name = "Lv", Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.brand, ZIndex = 3, Parent = lvHolder })
+UI.corner(lvTile, 12)
+local lvPat = UI.new("Frame", { Visible = false, Parent = lvTile })
+local lvCap = UI.label(lvTile, "LEVEL", 9, { FontFace = UI.F.heavy, TextColor3 = T.white, TextTransparency = 0.2, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 10), ZIndex = 4 })
+local levelNum = UI.label(lvTile, "1", 24, { FontFace = UI.F.black, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 28), ZIndex = 4 })
 local starBadge = lvTile
-local hotelName = UI.label(lvBody, "", 21, { FontFace = UI.F.display, TextColor3 = T.cream, Position = UDim2.fromOffset(66, 10), Size = UDim2.new(1, -80, 0, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
--- the stars: five glossy ones filled to the rating, the number after them
-local STAR = 21
-local rateSlot = UI.new("Frame", { Name = "Rating", Size = UDim2.fromOffset(190, STAR), Position = UDim2.fromOffset(66, 36), BackgroundTransparency = 1, ZIndex = 4, Parent = lvBody })
+local hotelName = UI.label(lvBody, "", 17, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(66, 8), Size = UDim2.new(1, -78, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
+local STAR = 14
+local rateSlot = UI.new("Frame", { Name = "Rating", Size = UDim2.fromOffset(120, STAR), Position = UDim2.fromOffset(66, 30), BackgroundTransparency = 1, ZIndex = 4, Parent = lvBody })
 local starClips = {}
 for i = 1, 5 do
 	local holder = UI.new("Frame", { Size = UDim2.fromOffset(STAR, STAR), Position = UDim2.fromOffset((i - 1) * (STAR + 2), 0), BackgroundTransparency = 1, ZIndex = 4, Parent = rateSlot })
-	UI.new("ImageLabel", { Image = UI.IMG.star, ImageColor3 = Color3.fromRGB(222, 216, 244), Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
+	UI.new("ImageLabel", { Image = G.star, ImageColor3 = T.line, Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
 	local clip = UI.new("Frame", { Size = UDim2.fromOffset(0, STAR), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 5, Parent = holder })
-	UI.new("ImageLabel", { Image = UI.IMG.star, ImageColor3 = T.sun, Size = UDim2.fromOffset(STAR, STAR), ZIndex = 5, Parent = clip })
-	UI.new("ImageLabel", { Image = UI.IMG.starGloss, ImageColor3 = T.white, ImageTransparency = 0.25, Size = UDim2.fromOffset(STAR, STAR), ZIndex = 6, Parent = clip })
+	UI.new("ImageLabel", { Image = G.star, ImageColor3 = T.sun, Size = UDim2.fromOffset(STAR, STAR), ZIndex = 5, Parent = clip })
 	starClips[i] = clip
 end
-local starNum = UI.label(rateSlot, "1.0", 17, { FontFace = UI.F.display, TextColor3 = T.sunDk, Position = UDim2.fromOffset(5 * (STAR + 2) + 4, 0), Size = UDim2.fromOffset(50, STAR), ZIndex = 5 })
-local xpTrack, xpFill = track(lvBody, { Name = "XP", Size = UDim2.new(1, -80, 0, 14), Position = UDim2.fromOffset(66, 63), ZIndex = 4 }, T.brand)
-local xpText = UI.label(xpTrack, "", 11, { FontFace = UI.F.display, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 8 })
-UI.textStroke(xpText, 1.5, 0, T.brandDk)
-local levelLbl = xpText -- (older code wrote the level here)
+local starNum = UI.label(rateSlot, "1.0", 13, { FontFace = UI.F.heavy, TextColor3 = T.sun, Position = UDim2.fromOffset(5 * (STAR + 2) + 3, -1), Size = UDim2.fromOffset(36, STAR + 2), ZIndex = 5 })
+local xpTrack = UI.new("Frame", { Name = "XP", Size = UDim2.new(1, -78, 0, 5), Position = UDim2.fromOffset(66, 51), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = lvBody })
+UI.corner(xpTrack, 3)
+local xpFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = T.brand, ZIndex = 5, Parent = xpTrack })
+UI.corner(xpFill, 3)
+local xpText = UI.label(lvBody, "", 11, { FontFace = UI.F.bold, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -12, 0, 31), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(140, 13), ZIndex = 5 })
+local levelLbl = xpText
+local xpSweep = UI.new("Frame", { Visible = false, Parent = xpFill })
 UI.tooltip(lvSlot, "Your hotel: check guests in, give great stays, clean and research to earn XP")
--- a slow shine crawls along the XP bar now and then
-local xpSweep = UI.new("Frame", { Name = "Sweep", Size = UDim2.new(0, 26, 1, 0), Position = UDim2.fromOffset(-30, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.45, Rotation = 14, ZIndex = 7, Parent = xpFill })
-task.spawn(function()
-	while xpSweep.Parent do
-		xpSweep.Position = UDim2.fromOffset(-30, 0)
-		UI.tween(xpSweep, 1.2, { Position = UDim2.new(1, 30, 0, 0) }, Enum.EasingStyle.Sine).Completed:Wait()
-		task.wait(3.5)
-	end
-end)
 
 ---------------------------------------------------------------- the money and the guests
 
-local cashSlot, cashBody = hudCard(topGroup, "Cash", UDim2.fromOffset(268, 58), UDim2.fromOffset(18, 8), function() openMenu("hotel") end, 29)
-local cashTile, cashIcon = tile(topGroup, 70, T.sun, UDim2.new(0, 0, 0, 37), ICON.cash, 50)
-UI.glow(cashTile, 120, T.sun, { ImageTransparency = 0.5, ZIndex = 2 })
-local cashText = UI.label(cashBody, "$0", 30, {
-	FontFace = UI.F.display, TextColor3 = T.cream, TextScaled = true, ZIndex = 4,
-	Position = UDim2.fromOffset(60, 9), Size = UDim2.new(1, -112, 1, -18),
+local TOP_X = 38
+local cashSlot, cashBody = glass(topGroup, "Cash", UDim2.fromOffset(240, 46), UDim2.fromOffset(TOP_X, 6), function() openMenu("hotel") end)
+local cashTile, cashIcon = glyphTile(cashBody, 34, T.green, UDim2.fromOffset(6, 6), G.cash, 22)
+local cashText = UI.label(cashBody, "$0", 22, {
+	FontFace = UI.F.black, TextColor3 = T.cream, TextScaled = true, ZIndex = 4,
+	Position = UDim2.fromOffset(50, 9), Size = UDim2.new(1, -96, 1, -18),
 })
-UI.new("UITextSizeConstraint", { MaxTextSize = 31, MinTextSize = 14, Parent = cashText })
-local plusBtn = UI.new("TextButton", { Name = "Plus", Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(38, 38), Position = UDim2.new(1, -10, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.green, ZIndex = 4, Parent = cashBody })
+UI.new("UITextSizeConstraint", { MaxTextSize = 23, MinTextSize = 12, Parent = cashText })
+local plusBtn = UI.new("TextButton", { Name = "Plus", Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(30, 30), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = cashBody })
 plusBtn.BackgroundTransparency = 0
-UI.corner(plusBtn, UDim.new(0.5, 0))
-UI.sheen(plusBtn)
-UI.rim(plusBtn, T.greenDk, 2.5)
-UI.gloss(plusBtn, 19, 0.45)
-for _, r in ipairs({ 0, 90 }) do
-	local bar = UI.new("Frame", { Size = UDim2.fromOffset(18, 6), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Rotation = r, BackgroundColor3 = T.white, ZIndex = 7, Parent = plusBtn })
-	UI.corner(bar, 3)
-	UI.rim(bar, T.greenDk, 1.5)
-end
-UI.animate(plusBtn, { hover = 1.15 })
+UI.corner(plusBtn, 8)
+UI.icon(plusBtn, ICON.upgrade, 26, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 5 })
+plusBtn.MouseEnter:Connect(function() UI.tween(plusBtn, 0.12, { BackgroundColor3 = T.line }) end)
+plusBtn.MouseLeave:Connect(function() UI.tween(plusBtn, 0.14, { BackgroundColor3 = T.ink2 }) end)
 plusBtn.Activated:Connect(function()
 	UI.sound("Click")
-	openMenu("hotel")
+	openMenu("upgrades")
 end)
-UI.tooltip(plusBtn, "Earnings and upgrades")
-local flyLayer = UI.new("Frame", { Name = "Fly", Size = UDim2.fromOffset(220, 80), Position = UDim2.fromOffset(66, 58), BackgroundTransparency = 1, ZIndex = 8, Parent = cashSlot })
+UI.tooltip(plusBtn, "Upgrades")
+local flyLayer = UI.new("Frame", { Name = "Fly", Size = UDim2.fromOffset(220, 80), Position = UDim2.fromOffset(50, 48), BackgroundTransparency = 1, ZIndex = 8, Parent = cashSlot })
 
-local roomSlot, roomBody = hudCard(topGroup, "Rooms", UDim2.fromOffset(170, 58), UDim2.fromOffset(314, 8), function() openMenu("hotel") end, 29)
-local roomTile = tile(topGroup, 62, T.blue, UDim2.new(0, 300, 0, 37), ICON.guest, 44)
-local roomNum = UI.label(roomBody, "0/0", 27, { FontFace = UI.F.display, TextColor3 = T.cream, Position = UDim2.fromOffset(52, 5), Size = UDim2.fromOffset(110, 30), ZIndex = 4 })
-UI.label(roomBody, "GUESTS", 13, { FontFace = UI.F.heavy, TextColor3 = T.muted, Position = UDim2.fromOffset(53, 33), Size = UDim2.fromOffset(110, 15), ZIndex = 4 })
+local roomSlot, roomBody = glass(topGroup, "Rooms", UDim2.fromOffset(160, 46), UDim2.fromOffset(TOP_X + 248, 6), function() openMenu("hotel") end)
+local roomTile = glyphTile(roomBody, 34, T.brand, UDim2.fromOffset(6, 6), G.guest, 20)
+local roomNum = UI.label(roomBody, "0/0", 20, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(50, 4), Size = UDim2.fromOffset(100, 22), ZIndex = 4 })
+UI.label(roomBody, "GUESTS", 10, { FontFace = UI.F.heavy, TextColor3 = T.muted, Position = UDim2.fromOffset(51, 26), Size = UDim2.fromOffset(100, 12), ZIndex = 4 })
 UI.tooltip(roomSlot, "Guests staying / your guest rooms")
--- the rooms waiting for a clean hang under it on a glossy coral flag
-local dirtyChip = UI.new("Frame", { Name = "Dirty", BackgroundColor3 = T.red, Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, Position = UDim2.fromOffset(18, 66), Visible = false, ZIndex = 5, Parent = roomSlot })
-UI.corner(dirtyChip, UDim.new(0.5, 0))
-UI.sheen(dirtyChip)
-local dirtyStroke = UI.rim(dirtyChip, T.redDk, 2.5)
-UI.pad(dirtyChip, 6, 0, 12, 0)
-UI.list(dirtyChip, Enum.FillDirection.Horizontal, 5, nil, Enum.VerticalAlignment.Center)
-UI.icon(dirtyChip, ICON.clean, 24, { LayoutOrder = 1, ZIndex = 6 })
-local dirtyText = UI.new("TextLabel", { Text = "", TextSize = 14, FontFace = UI.F.display, TextColor3 = T.white, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, ZIndex = 6, Parent = dirtyChip })
-UI.textStroke(dirtyText, 1.5, 0, T.redDk)
-local openTag = UI.new("Frame", { Visible = false, Parent = roomBody }) -- (the old OPEN / FULL tag: the count says it)
+-- rooms waiting for a clean: a red tab under the guests plate
+local dirtyChip = UI.new("Frame", { Name = "Dirty", BackgroundColor3 = T.red, Size = UDim2.fromOffset(0, 24), AutomaticSize = Enum.AutomaticSize.X, Position = UDim2.fromOffset(0, 52), Visible = false, ZIndex = 5, Parent = roomSlot })
+UI.corner(dirtyChip, 8)
+local dirtyStroke = Instance.new("UIStroke")
+dirtyStroke.Transparency = 1
+dirtyStroke.Parent = dirtyChip
+UI.pad(dirtyChip, 8, 0, 10, 0)
+UI.list(dirtyChip, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
+UI.new("ImageLabel", { Image = G.clean, ImageColor3 = T.white, Size = UDim2.fromOffset(14, 14), LayoutOrder = 1, ZIndex = 6, Parent = dirtyChip })
+local dirtyText = UI.new("TextLabel", { Text = "", TextSize = 12, FontFace = UI.F.heavy, TextColor3 = T.white, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, ZIndex = 6, Parent = dirtyChip })
+local openTag = UI.new("Frame", { Visible = false, Parent = roomBody })
 local openText = UI.label(openTag, "", 10, {})
 
----------------------------------------------------------------- the time, the day and the weather
+---------------------------------------------------------------- the clock: an actual one
 
-local clockSlot, clockBody = hudCard(clockGroup, "Clock", UDim2.fromOffset(212, 58), UDim2.fromOffset(24, 8), nil, 29)
-local skyTile, skyIcon = tile(clockGroup, 66, T.blue, UDim2.new(0, 0, 0, 37), ICON.sun, 46)
-local clockText = UI.label(clockBody, "", 25, { FontFace = UI.F.display, TextColor3 = T.cream, Position = UDim2.fromOffset(52, 5), Size = UDim2.new(1, -62, 0, 28), ZIndex = 4 })
-local dayLbl = UI.label(clockBody, "MON  -  SPRING", 12, { FontFace = UI.F.heavy, TextColor3 = T.muted, Position = UDim2.fromOffset(53, 31), Size = UDim2.new(1, -62, 0, 14), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
-local dateLbl = dayLbl
--- the day runs along the bottom of the card
-local dayTrack, dayFill = track(clockBody, { Size = UDim2.new(1, -66, 0, 6), Position = UDim2.new(0, 52, 1, -11), ZIndex = 4 }, T.sun)
-UI.tooltip(clockSlot, function()
+local FACE = 96
+-- the day tab tucks under the dial's left side
+local clockSlot, clockBody = glass(clockGroup, "Clock", UDim2.fromOffset(196, 50), UDim2.fromOffset(0, 23), nil, 14)
+local dayLbl = UI.label(clockBody, "MONDAY", 15, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(14, 7), Size = UDim2.fromOffset(120, 18), ZIndex = 4 })
+local dateLbl = UI.label(clockBody, "Spring, day 1", 12, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(14, 25), Size = UDim2.fromOffset(120, 15), ZIndex = 4 })
+local dayTrack = UI.new("Frame", { Size = UDim2.fromOffset(104, 3), Position = UDim2.fromOffset(14, 43), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = clockBody })
+UI.corner(dayTrack, 2)
+local dayFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = T.sun, ZIndex = 5, Parent = dayTrack })
+UI.corner(dayFill, 2)
+-- the dial
+local DIAL_DAY, DIAL_NIGHT = Color3.fromRGB(250, 251, 253), Color3.fromRGB(30, 46, 62)
+local INK_DAY, INK_NIGHT = Color3.fromRGB(34, 40, 52), Color3.fromRGB(236, 240, 250)
+local skyTile = UI.new("Frame", { Name = "Dial", Size = UDim2.fromOffset(FACE, FACE), Position = UDim2.new(1, 0, 0, 0), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = DIAL_DAY, ZIndex = 6, Parent = clockGroup })
+UI.corner(skyTile, UDim.new(0.5, 0))
+local bezel = Instance.new("UIStroke")
+bezel.Thickness = 4
+bezel.Color = T.hud
+bezel.Parent = skyTile
+local inkParts = {} -- everything drawn in the dial's ink colour
+local function spoke(angle, length, width, inset, z)
+	-- a thin bar from the rim (inset) toward the centre, turned to `angle` (0 = 12 o'clock)
+	local h = UI.new("Frame", { Size = UDim2.fromOffset(FACE, FACE), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Rotation = angle, ZIndex = z or 7, Parent = skyTile })
+	local bar = UI.new("Frame", { Size = UDim2.fromOffset(width, length), Position = UDim2.new(0.5, 0, 0, inset), AnchorPoint = Vector2.new(0.5, 0), BackgroundColor3 = INK_DAY, ZIndex = z or 7, Parent = h })
+	UI.corner(bar, UDim.new(0.5, 0))
+	table.insert(inkParts, bar)
+	return h, bar
+end
+for i = 0, 11 do
+	local major = i % 3 == 0
+	local _, bar = spoke(i * 30, major and 9 or 5, major and 3 or 2, 5)
+	if not major then bar.BackgroundTransparency = 0.45 end
+end
+-- what the dial tells you besides the time: the weather above the centre, the digital time below it
+local skyIcon = UI.new("ImageLabel", { Name = "Weather", Image = G.sun, ImageColor3 = T.sun, Size = UDim2.fromOffset(20, 20), Position = UDim2.new(0.5, 0, 0.5, -24), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 7, Parent = skyTile })
+local clockText = UI.label(skyTile, "", 12, { FontFace = UI.F.black, TextColor3 = INK_DAY, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 0.5, 14), Size = UDim2.new(1, 0, 0, 14), ZIndex = 7 })
+local hourHand = spoke(0, FACE / 2 - 24, 5, 24, 8)
+local minuteHand = spoke(0, FACE / 2 - 12, 3, 12, 9)
+local cap = UI.new("Frame", { Size = UDim2.fromOffset(9, 9), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.brand, ZIndex = 10, Parent = skyTile })
+UI.corner(cap, UDim.new(0.5, 0))
+local dialHit = UI.new("TextButton", { Text = "", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11, Parent = skyTile })
+UI.corner(dialHit, UDim.new(0.5, 0))
+local function clockTip()
 	local w = Shared:GetAttribute("WeatherName")
-	return w and ("Weather: " .. w) or "Guests check out in the morning and arrive all day"
-end)
+	local sd = Clock.seasonData and Clock.seasonData()
+	local s = (w and (w .. ". ") or "") .. (sd and (sd.name .. ": " .. (sd.demand >= 1.1 and "busy season" or sd.demand < 1 and "quiet season" or "steady season")) or "")
+	return s ~= "" and s or "Guests check out in the morning and arrive all day"
+end
+UI.tooltip(dialHit, clockTip)
+UI.tooltip(clockSlot, clockTip)
 
--- the tutorial card hangs under the top cards
-local tutWrap = UI.new("Frame", { Name = "Tutorial", Size = UDim2.fromOffset(540, 96), Position = UDim2.new(0.5, 0, 0, 104), AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Parent = topGroup })
+-- the tutorial card hangs under the top plates
+local tutWrap = UI.new("Frame", { Name = "Tutorial", Size = UDim2.fromOffset(540, 96), Position = UDim2.new(0.5, 0, 0, 66), AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Parent = topGroup })
 
 local shownStars = -1
 local function refreshCard()
@@ -239,13 +296,11 @@ local function refreshCard()
 	local stars = HOTEL:GetAttribute("HotelStars") or 1
 	starNum.Text = string.format("%.1f", stars)
 	if math.abs(stars - shownStars) > 0.01 then
-		local up = stars > shownStars and shownStars >= 0
 		shownStars = stars
 		for i = 1, 5 do
 			local k = math.clamp(stars - (i - 1), 0, 1)
-			UI.tween(starClips[i], 0.6, { Size = UDim2.fromOffset(STAR * k, STAR) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, (i - 1) * 0.06)
+			UI.tween(starClips[i], 0.4, { Size = UDim2.fromOffset(STAR * k, STAR) }, Enum.EasingStyle.Quint)
 		end
-		if up then UI.pop(rateSlot, 1.15) UI.sparkles(rateSlot, 4, T.sun, 1.2) end
 	end
 end
 for _, a in ipairs({ "HotelName", "HotelStars" }) do HOTEL:GetAttributeChangedSignal(a):Connect(refreshCard) end
@@ -258,23 +313,19 @@ local function refreshXP()
 	local xp = HOTEL:GetAttribute("XP") or 0
 	local need = HOTEL:GetAttribute("XPNeed") or Levels.need(lv)
 	levelNum.Text = tostring(lv)
-	levelNum.TextSize = lv >= 100 and 26 or 36
+	levelNum.TextSize = lv >= 100 and 18 or 24
 	xpText.Text = lv >= Levels.MAX and "MAX LEVEL" or (UI.commas(xp) .. " / " .. UI.commas(need) .. " XP")
 	local k = lv >= Levels.MAX and 1 or math.clamp(xp / math.max(need, 1), 0, 1)
 	if lv > shownLevel then
-		-- fill to the end, then start the new level from empty; the level tile flips over
-		UI.tween(xpFill, 0.35, { Size = UDim2.fromScale(1, 1) }, Enum.EasingStyle.Quad).Completed:Once(function()
+		UI.tween(xpFill, 0.3, { Size = UDim2.fromScale(1, 1) }, Enum.EasingStyle.Quad).Completed:Once(function()
 			xpFill.Size = UDim2.fromScale(0, 1)
-			UI.tween(xpFill, 0.5, { Size = UDim2.fromScale(k, 1) })
+			UI.tween(xpFill, 0.4, { Size = UDim2.fromScale(k, 1) })
 		end)
-		lvTile.Rotation = -180
-		UI.tween(lvTile, 0.8, { Rotation = 0 }, Enum.EasingStyle.Back)
-		UI.pop(lvTile, 1.4, 0.5)
-		local rays = UI.rays(lvHolder, 200, T.sun, { ImageTransparency = 0.2 })
-		UI.sparkles(lvHolder, 8, T.sun, 1.6)
-		task.delay(2.2, function() UI.tween(rays, 0.5, { ImageTransparency = 1 }) task.wait(0.5) rays:Destroy() end)
+		UI.pop(lvTile, 1.5, 0.3)
+		lvTile.BackgroundColor3 = T.sun
+		UI.tween(lvTile, 1.2, { BackgroundColor3 = T.brand })
 	else
-		UI.tween(xpFill, 0.5, { Size = UDim2.fromScale(k, 1) })
+		UI.tween(xpFill, 0.4, { Size = UDim2.fromScale(k, 1) })
 	end
 	shownLevel = lv
 end
@@ -282,30 +333,42 @@ for _, a in ipairs({ "Level", "XP", "XPNeed" }) do HOTEL:GetAttributeChangedSign
 refreshXP()
 
 local lastClock = ""
-local DOW = { Monday = "MON", Tuesday = "TUE", Wednesday = "WED", Thursday = "THU", Friday = "FRI", Saturday = "SAT", Sunday = "SUN" }
+local lastSky = ""
+local DOW = {}
+local SKY = {
+	cloudy = { G.cloud, Color3.fromRGB(128, 140, 160) }, fog = { G.fog, Color3.fromRGB(140, 150, 168) },
+	rain = { G.rain, Color3.fromRGB(64, 148, 240) }, storm = { G.storm, Color3.fromRGB(161, 173, 190) },
+	snow = { G.snow, Color3.fromRGB(96, 178, 240) },
+}
 local function refreshClock()
 	local t = Clock.now()
 	local night = Clock.isNight(t)
-	local d = Clock.date()
 	local s = Clock.format(t)
 	if s ~= lastClock then
 		lastClock = s
-		clockText.Text = s
-		dayLbl.Text = (DOW[d.dowName] or string.upper(d.dowName)) .. "  -  " .. string.upper(d.seasonName) .. "  -  DAY " .. d.day
+		clockText.Text = (s:gsub("%s*[AP]M$", ""))
+		local d = Clock.date()
+		dayLbl.Text = string.upper(d.dowName)
+		dateLbl.Text = d.seasonName .. ", day " .. d.day
 	end
+	hourHand.Rotation = (t % 12) / 12 * 360
+	minuteHand.Rotation = (t * 60 % 60) / 60 * 360
 	dayFill.Size = UDim2.fromScale(math.clamp(t / 24, 0, 1), 1)
-	local w = Shared:GetAttribute("Weather")
-	local img = (w and w ~= "clear" and ICON[w]) or (night and ICON.ev_night) or ICON.sun
-	if skyIcon.Image ~= img then
-		skyIcon.Image = img
-		UI.pop(skyIcon, 0.6, 0.4)
-		local sky = night and Color3.fromRGB(78, 64, 170) or ((w == "rain" or w == "storm" or w == "fog" or w == "cloudy") and Color3.fromRGB(130, 146, 184) or T.blue)
-		UI.tween(skyTile, 0.6, { BackgroundColor3 = sky })
-		if skyTile:FindFirstChild("Rim") then UI.tween(skyTile.Rim, 0.6, { Color = UI.shade(sky, -0.4) }) end
+	local w = Shared:GetAttribute("Weather") or "clear"
+	local key = w .. (night and "N" or "D")
+	if key ~= lastSky then
+		lastSky = key
+		local sky = SKY[w]
+		skyIcon.Image = sky and sky[1] or (night and G.moon or G.sun)
+		skyIcon.ImageColor3 = sky and sky[2] or (night and Color3.fromRGB(225, 237, 255) or T.sun)
+		UI.tween(skyTile, 0.8, { BackgroundColor3 = night and DIAL_NIGHT or DIAL_DAY })
+		local ink = night and INK_NIGHT or INK_DAY
+		for _, p in ipairs(inkParts) do UI.tween(p, 0.8, { BackgroundColor3 = ink }) end
+		UI.tween(clockText, 0.8, { TextColor3 = ink })
 	end
 end
 
--- cash: big numbers shorten so the card never overflows; infinite cash (the /mmoney command) shows as "Infinite"
+-- cash: big numbers shorten so the plate never overflows; infinite cash (the /mmoney command) shows as "Infinite"
 local function money(n)
 	if n == math.huge then return "Infinite" end
 	n = math.floor(n + 0.5)
@@ -318,15 +381,10 @@ cashText.Text = money(shownCash)
 local cashFrom, cashTo, cashT = shownCash, shownCash, 1
 local function flyDelta(d)
 	local up = d > 0
-	local l = UI.chip(flyLayer, (up and "+" or "-") .. money(math.abs(d)), up and T.green or T.red, { TextSize = 18, Size = UDim2.fromOffset(0, 30), Position = UDim2.fromOffset(0, -6), ZIndex = 9 })
-	UI.pop(l, 0.4, 0.4)
-	if up then UI.sparkles(l, 3, T.white, 1.4) end
-	UI.tween(l, 1.3, { Position = UDim2.fromOffset(0, 30) }, Enum.EasingStyle.Quint)
-	UI.tween(l, 0.4, { TextTransparency = 1, BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 1)
-	for _, st in ipairs(l:GetChildren()) do
-		if st:IsA("UIStroke") then UI.tween(st, 0.4, { Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 1) end
-	end
-	task.delay(1.45, function() l:Destroy() end)
+	local l = UI.chip(flyLayer, (up and "+" or "-") .. money(math.abs(d)), up and T.green or T.red, { TextSize = 15, Size = UDim2.fromOffset(0, 26), Position = UDim2.fromOffset(0, -4), ZIndex = 9 })
+	UI.tween(l, 1.1, { Position = UDim2.fromOffset(0, 22) }, Enum.EasingStyle.Quint)
+	UI.tween(l, 0.35, { TextTransparency = 1, BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0.9)
+	task.delay(1.3, function() l:Destroy() end)
 end
 player:GetAttributeChangedSignal("Cash"):Connect(function()
 	local now = player:GetAttribute("Cash") or 0
@@ -335,11 +393,7 @@ player:GetAttributeChangedSignal("Cash"):Connect(function()
 	cashFrom, cashTo, cashT = shownCash, now, 0
 	if math.abs(d) >= 1 and d == d and math.abs(d) ~= math.huge then
 		flyDelta(d)
-		UI.pop(cashSlot, d > 0 and 1.08 or 0.96, 0.3)
-		if d > 0 then
-			cashIcon.Rotation = -18
-			UI.tween(cashIcon, 0.6, { Rotation = 0 }, Enum.EasingStyle.Elastic)
-		end
+		UI.pop(cashTile, d > 0 and 1.3 or 0.8, 0.25)
 	end
 end)
 
@@ -351,16 +405,9 @@ local function refreshRooms()
 	local total = ready + busy + dirty
 	if busy ~= shown.busy or total ~= shown.total then
 		roomNum.Text = busy .. "/" .. total
-		if shown.busy >= 0 then UI.pop(roomSlot, 1.08, 0.3) end
 	end
 	if dirty ~= shown.dirty then
 		dirtyText.Text = dirty == 1 and "1 ROOM TO CLEAN" or (dirty .. " ROOMS TO CLEAN")
-		if dirty > 0 and not dirtyChip.Visible then
-			dirtyChip.Visible = true
-			UI.pop(dirtyChip, 0.5, 0.4)
-		elseif dirty > shown.dirty and shown.dirty >= 0 then
-			UI.pop(dirtyChip, 1.15, 0.3)
-		end
 		dirtyChip.Visible = dirty > 0
 	end
 	shown.busy, shown.total, shown.dirty = busy, total, dirty
@@ -406,20 +453,24 @@ if UIS.TouchEnabled then
 	local sg = UI.new("ScreenGui", { Name = "SprintBtn", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 3, Parent = pgui })
 	local btn = UI.new("ImageButton", {
 		Name = "Sprint", Size = UDim2.fromOffset(64, 64), AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = T.ink, BackgroundTransparency = 0.15, AutoButtonColor = false, Image = "", Parent = sg,
+		BackgroundColor3 = Color3.fromRGB(20, 24, 32), BackgroundTransparency = 0.45, AutoButtonColor = false, Image = "", Parent = sg,
 	})
+	-- round 34: looks like Roblox's own touch buttons (dark glass, white ring); blue with a RUN tag while on
 	UI.corner(btn, 32)
-	local st = UI.stroke(btn, 2, T.gold, 0.2)
-	local lbl = UI.icon(btn, ICON.run, 40, { Size = UDim2.fromScale(0.72, 0.72), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+	local st = UI.stroke(btn, 2.5, Color3.new(1, 1, 1), 0.45)
+	local lbl = UI.icon(btn, ICON.run, 40, { Size = UDim2.fromScale(0.66, 0.66), Position = UDim2.fromScale(0.5, 0.46), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1 })
+	local tag = UI.label(btn, "RUN", 11, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -3), Size = UDim2.new(1, 0, 0.24, 0), TextScaled = true })
 	local function paint()
-		btn.BackgroundColor3 = sprinting and T.gold or T.ink
-		lbl.ImageTransparency = sprinting and 0 or 0.15
-		st.Transparency = sprinting and 0 or 0.2
+		UI.tween(btn, 0.15, { BackgroundColor3 = sprinting and T.brand or Color3.fromRGB(20, 24, 32), BackgroundTransparency = sprinting and 0.08 or 0.45 })
+		UI.tween(st, 0.15, { Transparency = sprinting and 0 or 0.45 })
+		lbl.ImageTransparency = sprinting and 0 or 0.1
+		tag.TextTransparency = sprinting and 0 or 0.35
 	end
 	btn.Activated:Connect(function()
 		sprinting = not sprinting
 		applySprint()
 		paint()
+		UI.pop(btn, sprinting and 1.15 or 0.9, 0.2)
 	end)
 	player.CharacterAdded:Connect(function() task.defer(paint) end)
 	task.spawn(function()
@@ -430,7 +481,7 @@ if UIS.TouchEnabled then
 				local inset = game:GetService("GuiService"):GetGuiInset()
 				local c = jump.AbsolutePosition + jump.AbsoluteSize / 2 + inset
 				local d = jump.AbsoluteSize.X * 0.95
-				btn.Size = UDim2.fromOffset(d * 0.72, d * 0.72)
+				btn.Size = UDim2.fromOffset(d * 0.8, d * 0.8)
 				btn:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(0.5, 0)
 				btn.Position = UDim2.fromOffset(c.X - d * 1.05, c.Y - d * 0.35)
 				btn.Visible = tg.Enabled and player:GetAttribute("Building") ~= true
@@ -454,7 +505,8 @@ do
 		local vw = hud.AbsoluteSize.X
 		local w = groups.Top.frame.AbsoluteSize.X
 		local left = (vw - w) / 2
-		local clash = inset.Max.X > 0 and left < inset.Max.X + 8
+		-- round 34: TopbarInset is the FREE strip between Roblox's buttons, so clash = we reach past its edges
+		local clash = inset.Max.X > 0 and (left < inset.Min.X + 8 or left + w > inset.Max.X - 8)
 		groups.Top.home = clash and UDim2.new(0.5, 0, 0, inset.Max.Y + 4) or home
 		if groups.Top.frame.Position.Y.Offset >= 0 then groups.Top.frame.Position = groups.Top.home end
 		if layoutGroups then layoutGroups() end
@@ -522,52 +574,70 @@ end
 ---------------------------------------------------------------- day summary
 
 local summaryOpen = false
+-- round 34: the day's report, remade in the chapter goals' look: a white card with the sun badge on top, the day's
+-- profit big in the middle, a line per figure (in green, out in red), the rating and what tomorrow brings.
 local function daySummary(d)
 	if summaryOpen or player:GetAttribute("HideDaySummary") then return end
 	summaryOpen = true
 	local layer = UI.new("Frame", { Name = "DaySummary", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = hud })
 	local dim = UI.new("TextButton", { Text = "", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.shadow, BackgroundTransparency = 1, Parent = layer })
-	UI.tween(dim, 0.3, { BackgroundTransparency = 0.5 })
-	local wrap = UI.new("Frame", { Size = UDim2.fromOffset(560, 380), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = layer })
+	UI.tween(dim, 0.3, { BackgroundTransparency = 0.45 })
+	local wrap = UI.new("Frame", { Size = UDim2.fromOffset(520, 600), Position = UDim2.fromScale(0.5, 0.52), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = layer })
 	UI.autoScale(wrap)
-	local holder, body = UI.panel(wrap, UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5), { name = "Card" })
-	UI.icon(body, ICON.star, 64, { Position = UDim2.new(0.5, 0, 0, 18), AnchorPoint = Vector2.new(0.5, 0) })
-	UI.label(body, "Day " .. d.day .. " complete", 30, { FontFace = UI.F.black, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 86), Size = UDim2.new(1, 0, 0, 34) })
-	UI.label(body, "Here's how your hotel did", 15, { FontFace = UI.F.body, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 120), Size = UDim2.new(1, 0, 0, 18) })
-	local tiles = UI.new("Frame", { Size = UDim2.new(1, -48, 0, 120), Position = UDim2.fromOffset(24, 150), BackgroundTransparency = 1, Parent = body })
-	UI.list(tiles, Enum.FillDirection.Horizontal, 12, Enum.HorizontalAlignment.Center)
-	local stats = {
-		{ icon = "guest", value = d.guests or 0, text = "guests served", color = T.cream },
-		{ icon = "sparkle", value = d.cleans or 0, text = "rooms cleaned", color = T.blue },
-		{ icon = "cash", value = d.earned or 0, text = "earned", color = T.green, money = true },
+	local holder = UI.new("Frame", { Name = "Card", Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = wrap })
+	UI.shadow(holder, { drop = 10, transparency = 0.5 })
+	local body = plate(holder, { Name = "Body", Size = UDim2.fromScale(1, 1), radius = 26 })
+	UI.icon(holder, ICON.sun, 96, { Position = UDim2.new(0.5, 0, 0, -46), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 5 })
+	UI.label(body, "DAY " .. (d.day or 1) .. " COMPLETE", 14, { FontFace = UI.F.black, TextColor3 = T.gold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 16) })
+	local earned, wages, upkeep = d.earned or 0, d.wages or 0, d.upkeep or 0
+	local profit = earned - wages - upkeep
+	local big = UI.label(body, "$0", 46, { FontFace = UI.F.black, TextColor3 = profit >= 0 and T.greenDk or T.red, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 74), Size = UDim2.new(1, 0, 0, 52) })
+	UI.label(body, profit >= 0 and "profit today" or "loss today", 14, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 126), Size = UDim2.new(1, 0, 0, 16) })
+	task.delay(0.3, function()
+		UI.countTo(big, math.abs(profit), function(x) return (profit >= 0 and "+$" or "-$") .. UI.commas(x) end, 1.1)
+	end)
+
+	-- the figures, one line each
+	local list = UI.new("Frame", { Size = UDim2.new(1, -56, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromOffset(28, 156), BackgroundTransparency = 1, Parent = body })
+	UI.list(list, Enum.FillDirection.Vertical, 6)
+	local rows = {
+		{ "guest", "Guests served", tostring(d.guests or 0), T.cream },
+		{ "clean", "Rooms cleaned", tostring(d.cleans or 0), T.cream },
+		{ "cash", "Money from guests", "+$" .. UI.commas(earned), T.greenDk },
 	}
-	if (d.wages or 0) > 0 then
-		table.insert(stats, { icon = "staff", value = d.wages, text = "staff wages", color = T.red, money = true })
+	if wages > 0 then table.insert(rows, { "staff", "Staff wages", "-$" .. UI.commas(wages), T.red }) end
+	if upkeep > 0 then table.insert(rows, { "hammer", "Season upkeep", "-$" .. UI.commas(upkeep), T.red }) end
+	for i, r in ipairs(rows) do
+		local row = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = T.ink2, LayoutOrder = i, Parent = list })
+		UI.corner(row, 12)
+		UI.icon(row, ICON[r[1]] or ICON.star, 34, { Position = UDim2.new(0, 8, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5) })
+		UI.label(row, r[2], 16, { FontFace = UI.F.heavy, TextColor3 = T.cream, Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -160, 1, 0) })
+		UI.label(row, r[3], 18, { FontFace = UI.F.black, TextColor3 = r[4], TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -14, 0, 0), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(120, 44) })
 	end
-	if (d.upkeep or 0) > 0 then
-		table.insert(stats, { icon = "hammer", value = d.upkeep, text = "season upkeep", color = T.red, money = true })
+	UI.stagger(list, 0.07)
+
+	-- the rating and tomorrow
+	local foot = UI.new("Frame", { Size = UDim2.new(1, -56, 0, 64), Position = UDim2.new(0, 28, 1, -182), BackgroundTransparency = 1, Parent = body })
+	local stars = HOTEL:GetAttribute("HotelStars") or 1
+	UI.label(foot, "RATING", 11, { FontFace = UI.F.black, TextColor3 = T.muted, Size = UDim2.fromOffset(120, 14) })
+	for i = 1, 5 do
+		local k = math.clamp(stars - (i - 1), 0, 1)
+		UI.new("ImageLabel", { Image = G.star, ImageColor3 = k >= 0.5 and T.sun or T.line, BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset((i - 1) * 24, 18), Parent = foot })
 	end
-	for i, s in ipairs(stats) do
-		local tile = UI.new("Frame", { Size = UDim2.fromOffset(160, 120), BackgroundColor3 = T.ink2, LayoutOrder = i, Parent = tiles })
-		UI.corner(tile, 14)
-		UI.stroke(tile, 1.5, T.line, 0.4)
-		UI.icon(tile, ICON[s.icon], 38, { Position = UDim2.new(0.5, 0, 0, 10), AnchorPoint = Vector2.new(0.5, 0) })
-		local v = UI.label(tile, "0", 30, { FontFace = UI.F.black, TextColor3 = s.color, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 50), Size = UDim2.new(1, 0, 0, 34) })
-		UI.label(tile, s.text, 14, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 88), Size = UDim2.new(1, 0, 0, 18) })
-		task.delay(0.35 + i * 0.15, function()
-			UI.countTo(v, s.value, function(x) return (s.money and "$" or "") .. UI.commas(x) end, 0.9)
-			UI.pop(tile, 1.1)
-		end)
-	end
-	UI.stagger(tiles, 0.08)
+	UI.label(foot, string.format("%.1f", stars), 16, { FontFace = UI.F.black, TextColor3 = T.sun, Position = UDim2.fromOffset(124, 18), Size = UDim2.fromOffset(40, 22) })
+	local sd = Clock.seasonData and Clock.seasonData()
+	local w = Shared:GetAttribute("WeatherName")
+	local tomorrow = sd and (sd.name .. ", " .. (sd.demand >= 1.1 and "a busy season" or sd.demand < 1 and "a quiet season" or "a steady season")) or "Guests arrive all day"
+	UI.label(foot, "TOMORROW", 11, { FontFace = UI.F.black, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, 0, 0, 0), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(240, 14) })
+	UI.label(foot, tomorrow .. (w and (". " .. w) or ""), 14, { FontFace = UI.F.heavy, TextColor3 = T.cream, TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, Position = UDim2.new(1, 0, 0, 18), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(260, 40) })
 	if d.uncollected and d.uncollected > 0 then
-		UI.label(body, "Your safe still holds $" .. UI.commas(d.uncollected) .. ". Go and collect it!", 15, {
-			FontFace = UI.F.heavy, TextColor3 = T.gold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 282), Size = UDim2.new(1, 0, 0, 18),
-		})
+		local tip = UI.new("Frame", { Size = UDim2.new(1, -56, 0, 30), Position = UDim2.new(0, 28, 1, -88), AnchorPoint = Vector2.new(0, 1), BackgroundColor3 = Color3.fromRGB(255, 244, 214), Parent = body })
+		UI.corner(tip, 10)
+		UI.label(tip, "Your safe still holds $" .. UI.commas(d.uncollected) .. ". Go and collect it!", 14, { FontFace = UI.F.heavy, TextColor3 = Color3.fromRGB(150, 96, 20), TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1) })
 	end
 	local close
-	local btn = UI.button(body, {
-		text = "Continue", kind = "gold", size = UDim2.fromOffset(200, 46), pos = UDim2.new(0.5, 0, 1, -22), anchor = Vector2.new(0.5, 1),
+	UI.button(body, {
+		text = "Continue", kind = "gold", size = UDim2.fromOffset(220, 48), pos = UDim2.new(0.5, 0, 1, -20), anchor = Vector2.new(0.5, 1),
 		onClick = function() close() end,
 	})
 	UI.open(holder, { from = 0.7, rise = 30 })
@@ -579,7 +649,7 @@ local function daySummary(d)
 		UI.close(holder, function() layer:Destroy() end)
 	end
 	dim.Activated:Connect(close)
-	task.delay(9, close)
+	task.delay(12, close)
 end
 
 ---------------------------------------------------------------- tutorial card
@@ -740,7 +810,7 @@ showLevelUp = function(d)
 			local holder = UI.new("Frame", { Size = UDim2.fromOffset(142, 150), BackgroundTransparency = 1, LayoutOrder = i, Visible = false, Parent = row })
 			local tile = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.ink, BackgroundTransparency = 0.04, Parent = holder })
 			UI.corner(tile, 18)
-			UI.grad(tile, Color3.fromRGB(255, 255, 255), Color3.fromRGB(196, 202, 226), 90)
+			UI.grad(tile, Color3.fromRGB(255, 255, 255), Color3.fromRGB(218, 221, 226), 90)
 			UI.stroke(tile, 2, T.gold, 0.25)
 			local bg = UI.new("Frame", { Size = UDim2.fromOffset(80, 80), Position = UDim2.new(0.5, 0, 0, 12), AnchorPoint = Vector2.new(0.5, 0), BackgroundColor3 = T.ink2, Parent = tile })
 			UI.corner(bg, 40)
@@ -1113,7 +1183,7 @@ local function chapterBanner(d)
 	UI.autoScale(wrap)
 	local ribbon = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.ink, BackgroundTransparency = 0.04, Parent = wrap })
 	UI.corner(ribbon, 24)
-	UI.grad(ribbon, Color3.fromRGB(255, 255, 255), Color3.fromRGB(196, 202, 226), 90)
+	UI.grad(ribbon, Color3.fromRGB(255, 255, 255), Color3.fromRGB(218, 221, 226), 90)
 	UI.stroke(ribbon, 3, T.gold, 0)
 	UI.icon(wrap, ICON.quest, 110, { Position = UDim2.new(0, -30, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), ZIndex = 3 })
 	local top = UI.label(ribbon, "CHAPTER " .. ((d.ch or 2) - 1) .. " COMPLETE", 18, { FontFace = UI.F.black, TextColor3 = T.gold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(60, 22), Size = UDim2.new(1, -80, 0, 22) })
@@ -1226,7 +1296,7 @@ Notify.OnClientEvent:Connect(function(kind, d)
 	if kind == "levelUp" then
 		if levelShowing then table.insert(levelQueue, d) else showLevelUp(d) end
 	elseif kind == "xp" then
-		if d.pos then worldPop(d.pos + Vector3.new(0, 2.5, 0), "+" .. d.amount .. " XP", Color3.fromRGB(206, 182, 255), "star") end
+		if d.pos then worldPop(d.pos + Vector3.new(0, 2.5, 0), "+" .. d.amount .. " XP", Color3.fromRGB(229, 240, 255), "star") end
 		UI.pop(xpTrack, 1.08)
 	elseif kind == "toast" then
 		toast(d.text, d.icon, d.bad, d.kind == "good")
@@ -1295,11 +1365,11 @@ local function keyText(prompt)
 	return prompt.KeyboardKeyCode.Name
 end
 
-local PS = (player:GetAttribute("PromptSize") or 100) / 100
+local PS = (player:GetAttribute("PromptSize") or 100) / 100 * 0.72 -- round 21: smaller prompts
 player:GetAttributeChangedSignal("PromptSize"):Connect(function()
-	PS = (player:GetAttribute("PromptSize") or 100) / 100
+	PS = (player:GetAttribute("PromptSize") or 100) / 100 * 0.72
 end)
-local CAP_RIM = Color3.fromRGB(204, 196, 244)
+local CAP_RIM = Color3.fromRGB(232, 237, 244)
 local function buildPrompt(prompt)
 	local cols = COLORS[prompt:GetAttribute("Color") or "yellow"] or COLORS.yellow
 	local hold = prompt.HoldDuration > 0
@@ -1317,10 +1387,10 @@ local function buildPrompt(prompt)
 	local wrap = UI.new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(0, H), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Parent = float })
 	UI.shadow(wrap, { drop = 9, transparency = 0.52, spread = 2 })
 	-- the tail: a white wedge under the capsule pointing at the spot
-	local tail = UI.new("ImageLabel", { Name = "Tail", Image = UI.IMG.tail, ImageColor3 = Color3.fromRGB(234, 230, 250), Size = UDim2.fromOffset(26, 18), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, -3), ZIndex = 1, Parent = wrap })
+	local tail = UI.new("ImageLabel", { Name = "Tail", Image = UI.IMG.tail, ImageColor3 = Color3.fromRGB(245, 247, 250), Size = UDim2.fromOffset(26, 18), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, -3), ZIndex = 1, Parent = wrap })
 	local card = UI.new("Frame", { Name = "Card", Size = UDim2.fromOffset(0, H), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.white, ZIndex = 2, Parent = wrap })
 	UI.corner(card, UDim.new(0.5, 0))
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(232, 228, 250)), Parent = card })
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = card })
 	local baseRim = UI.rim(card, CAP_RIM, 2.5)
 	baseRim.Name = "BaseRim"
 	-- the colour glow ring (hover / hold)
@@ -1340,7 +1410,7 @@ local function buildPrompt(prompt)
 	local kc = UI.new("Frame", { Size = UDim2.fromOffset(52, 52), BackgroundTransparency = 1, LayoutOrder = 1, ZIndex = 3, Parent = content })
 	local ringTrack = UI.new("Frame", { Size = UDim2.fromOffset(52, 52), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, ZIndex = 3, Parent = kc })
 	UI.corner(ringTrack, UDim.new(0.5, 0))
-	UI.rim(ringTrack, Color3.fromRGB(226, 222, 246), 4)
+	UI.rim(ringTrack, Color3.fromRGB(240, 242, 246), 4)
 	local track = UI.badge(kc, 42, cols[1], nil, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 4 })
 	local _, setRingRaw, ringStrokes = UI.ring(kc, 52, 4, cols[2], { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), ZIndex = 6 })
 	local dsc = Instance.new("UIScale")
@@ -1369,7 +1439,7 @@ local function buildPrompt(prompt)
 	local badge = UI.new("Frame", { Size = UDim2.fromOffset(48, 48), BackgroundColor3 = UI.shade(cols[1], 0.72), LayoutOrder = 3, ZIndex = 3, Parent = content })
 	UI.corner(badge, UDim.new(0.5, 0))
 	UI.rim(badge, UI.shade(cols[1], 0.2), 2)
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(214, 210, 228)), Parent = badge })
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(224, 225, 228)), Parent = badge })
 	local icon = UI.icon(badge, iconImg, 38, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), ZIndex = 4 })
 	if not key then
 		-- touch: the key disc has nothing to say, so the icon lives there instead and the right disc goes

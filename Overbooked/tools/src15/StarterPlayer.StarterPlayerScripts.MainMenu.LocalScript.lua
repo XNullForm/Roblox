@@ -137,20 +137,25 @@ local function run()
 
 	---------------------------------------------------------------- the column
 
-	-- a dark fade down the left so the words read over any shot
-	local shade = UI.new("Frame", { Name = "Shade", Size = UDim2.fromScale(0.62, 1), BackgroundColor3 = Color3.fromRGB(8, 10, 16), ZIndex = 51, Parent = gui })
-	UI.new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.12), NumberSequenceKeypoint.new(0.55, 0.45), NumberSequenceKeypoint.new(1, 1) }), Parent = shade })
+	-- round 34: a soft blue fade down the left, and the column sits on a white glossy card (the chapter goals' look)
+	local shade = UI.new("Frame", { Name = "Shade", Size = UDim2.fromScale(0.55, 1), BackgroundColor3 = Color3.fromRGB(16, 44, 86), ZIndex = 51, Parent = gui })
+	UI.new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.45), NumberSequenceKeypoint.new(0.6, 0.75), NumberSequenceKeypoint.new(1, 1) }), Parent = shade })
 	local left = UI.new("Frame", { Name = "Left", Size = UDim2.fromOffset(520, 700), Position = UDim2.new(0, 84, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1, ZIndex = 52, Parent = gui })
 	UI.autoScale(left)
+	do
+		local back = UI.new("Frame", { Name = "Panel", Size = UDim2.fromOffset(584, 740), Position = UDim2.fromOffset(-32, -34), BackgroundColor3 = T.ink, ZIndex = 52, Parent = left })
+		UI.corner(back, 30)
+		UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = back })
+		UI.rim(back, Color3.fromRGB(232, 237, 244), 3)
+	end
+	local ICON = require(Shared:WaitForChild("Config")).ICONS
 	local function L(text, size, font, color, pos, sz)
 		return UI.label(left, text, size, { FontFace = font, TextColor3 = color, Position = pos, Size = sz, ZIndex = 53 })
 	end
-	local bellTile = UI.new("Frame", { Size = UDim2.fromOffset(46, 46), BackgroundColor3 = T.brand, ZIndex = 53, Parent = left })
-	UI.corner(bellTile, 13)
-	UI.new("ImageLabel", { Image = G.bell, ImageColor3 = T.white, Size = UDim2.fromOffset(26, 26), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 54, Parent = bellTile })
-	L("OVERBOOKED", 70, UI.F.black, T.white, UDim2.fromOffset(-3, 58), UDim2.fromOffset(520, 74))
-	L("S E A S I D E   H O T E L   T Y C O O N", 14, UI.F.bold, T.hudMuted, UDim2.fromOffset(2, 134), UDim2.fromOffset(520, 18))
-	L("SAVE FILES", 13, UI.F.heavy, T.hudMuted, UDim2.fromOffset(2, 192), UDim2.fromOffset(300, 16))
+	UI.icon(left, ICON.hotel, 64, { Position = UDim2.fromOffset(-6, -10), ZIndex = 54 })
+	L("OVERBOOKED", 70, UI.F.black, T.cream, UDim2.fromOffset(-3, 58), UDim2.fromOffset(520, 74))
+	L("SEASIDE HOTEL TYCOON", 15, UI.F.black, T.brand, UDim2.fromOffset(2, 134), UDim2.fromOffset(520, 18))
+	L("SAVE FILES", 13, UI.F.heavy, T.muted, UDim2.fromOffset(2, 192), UDim2.fromOffset(300, 16))
 
 	local busy = false
 	local start -- forward
@@ -161,18 +166,18 @@ local function run()
 		return "$" .. UI.commas(n)
 	end
 	for i = 1, SLOTS do
-		local card = UI.new("Frame", { Name = "Save" .. i, Size = UDim2.fromOffset(500, 92), Position = UDim2.fromOffset(0, 216 + (i - 1) * 102), BackgroundColor3 = T.hud, BackgroundTransparency = 0.1, ZIndex = 53, Parent = left })
+		local card = UI.new("Frame", { Name = "Save" .. i, Size = UDim2.fromOffset(500, 92), Position = UDim2.fromOffset(0, 216 + (i - 1) * 102), BackgroundColor3 = T.ink2, BackgroundTransparency = 0.1, ZIndex = 53, Parent = left })
 		UI.corner(card, 14)
 		local st = Instance.new("UIStroke")
-		st.Color = T.hudLine
+		st.Color = T.line
 		st.Transparency = 0.4
 		st.Parent = card
-		local tile = UI.new("Frame", { Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(16, 18), BackgroundColor3 = T.hud2, ZIndex = 54, Parent = card })
+		local tile = UI.new("Frame", { Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(16, 18), BackgroundColor3 = T.line, ZIndex = 54, Parent = card })
 		UI.corner(tile, 14)
-		local tileCap = UI.label(tile, "FILE", 9, { FontFace = UI.F.heavy, TextColor3 = T.hudMuted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 10), ZIndex = 55 })
-		local tileNum = UI.label(tile, tostring(i), 26, { FontFace = UI.F.black, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 30), ZIndex = 55 })
-		local name = UI.label(card, "Save file " .. i, 20, { FontFace = UI.F.black, TextColor3 = T.white, Position = UDim2.fromOffset(88, 20), Size = UDim2.fromOffset(230, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
-		local sub = UI.label(card, "Checking...", 14, { FontFace = UI.F.bold, TextColor3 = T.hudMuted, Position = UDim2.fromOffset(88, 48), Size = UDim2.fromOffset(250, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
+		local tileCap = UI.label(tile, "FILE", 9, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 10), ZIndex = 55 })
+		local tileNum = UI.label(tile, tostring(i), 26, { FontFace = UI.F.black, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 30), ZIndex = 55 })
+		local name = UI.label(card, "Save file " .. i, 20, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(88, 20), Size = UDim2.fromOffset(230, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
+		local sub = UI.label(card, "Checking...", 14, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(88, 48), Size = UDim2.fromOffset(250, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
 		local rec = { filled = false }
 		local playBtn, playText = UI.button(card, {
 			text = "New hotel", kind = "green", size = UDim2.fromOffset(124, 46), pos = UDim2.new(1, -16, 0.5, 0), anchor = Vector2.new(1, 0.5), textSize = 17,
@@ -182,9 +187,9 @@ local function run()
 		UI.setDisabled(playBtn, true)
 		-- the bin: press once to arm it, again to erase the file
 		local armed = 0
-		local bin = UI.new("ImageButton", { Name = "Delete", Size = UDim2.fromOffset(36, 36), Position = UDim2.new(1, -150, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.hud2, Visible = false, ZIndex = 54, Parent = card })
+		local bin = UI.new("ImageButton", { Name = "Delete", Size = UDim2.fromOffset(36, 36), Position = UDim2.new(1, -150, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.line, Visible = false, ZIndex = 54, Parent = card })
 		UI.corner(bin, 10)
-		local binIcon = UI.new("ImageLabel", { Image = G.trash, ImageColor3 = T.hudMuted, Size = UDim2.fromOffset(18, 18), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 55, Parent = bin })
+		local binIcon = UI.new("ImageLabel", { Image = G.trash, ImageColor3 = T.muted, Size = UDim2.fromOffset(18, 18), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 55, Parent = bin })
 		UI.tooltip(bin, function() return os.clock() - armed < 4 and "Press again to erase this save for good" or "Delete this save" end)
 		bin.Activated:Connect(function()
 			if busy or not rec.filled then return end
@@ -203,8 +208,8 @@ local function run()
 				sub.Text = "Press the bin again to erase this save"
 				task.delay(4, function()
 					if bin.Parent and os.clock() - armed >= 4 then
-						bin.BackgroundColor3 = T.hud2
-						binIcon.ImageColor3 = T.hudMuted
+						bin.BackgroundColor3 = T.line
+						binIcon.ImageColor3 = T.muted
 						if rec.text then sub.Text = rec.text end
 					end
 				end)
@@ -215,8 +220,8 @@ local function run()
 			rec.filled = d ~= nil
 			UI.setDisabled(playBtn, false)
 			bin.Visible = rec.filled
-			bin.BackgroundColor3 = T.hud2
-			binIcon.ImageColor3 = T.hudMuted
+			bin.BackgroundColor3 = T.line
+			binIcon.ImageColor3 = T.muted
 			if d then
 				name.Text = d.name or "My Hotel"
 				rec.text = "Level " .. (d.level or 1) .. ",  " .. (d.rooms or 3) .. " rooms,  " .. cash(d.cash)
@@ -224,15 +229,17 @@ local function run()
 				tileCap.Text = "LEVEL"
 				tileCap.TextColor3 = T.white
 				tileNum.Text = tostring(d.level or 1)
+				tileNum.TextColor3 = T.white
 				playText.Text = "Continue"
 				UI.setKind(playBtn, "gold")
 			else
 				name.Text = "Empty save"
 				rec.text = "Start a new hotel here"
-				tile.BackgroundColor3 = T.hud2
+				tile.BackgroundColor3 = T.line
 				tileCap.Text = "FILE"
-				tileCap.TextColor3 = T.hudMuted
+				tileCap.TextColor3 = T.muted
 				tileNum.Text = tostring(i)
+				tileNum.TextColor3 = T.muted
 				playText.Text = "New hotel"
 				UI.setKind(playBtn, "green")
 			end
@@ -243,12 +250,15 @@ local function run()
 
 	-- replay the tutorial, settings, who is here
 	local optY = 216 + SLOTS * 102 + 8
-	local _, setReplay = UI.toggle(left, false, function(on) replayTutorial = on end, { pos = UDim2.fromOffset(0, optY) })
-	L("Replay the tutorial when I continue", 15, UI.F.bold, T.white, UDim2.fromOffset(74, optY + 4), UDim2.fromOffset(400, 24))
+	local replayToggle, setReplay = UI.toggle(left, false, function(on) replayTutorial = on end, { pos = UDim2.fromOffset(0, optY) })
+	for _, o in ipairs(replayToggle and { replayToggle, unpack(replayToggle:GetDescendants()) } or {}) do
+		if o:IsA("GuiObject") then o.ZIndex += 53 end -- above the white panel
+	end
+	L("Replay the tutorial when I continue", 15, UI.F.bold, T.cream, UDim2.fromOffset(74, optY + 4), UDim2.fromOffset(400, 24))
 	local openSettings -- forward
 	local setBtn = UI.button(left, { text = "Settings", icon = G.settings, iconSize = 18, kind = "night", size = UDim2.fromOffset(160, 44), pos = UDim2.fromOffset(0, optY + 52), textSize = 17, onClick = function() openSettings() end })
 	setBtn.ZIndex = 53
-	local here = L("", 14, UI.F.bold, T.hudMuted, UDim2.fromOffset(2, optY + 112), UDim2.fromOffset(500, 18))
+	local here = L("", 14, UI.F.bold, T.muted, UDim2.fromOffset(2, optY + 112), UDim2.fromOffset(500, 18))
 	local function countHere()
 		local n = #Players:GetPlayers() - 1
 		here.Text = n <= 0 and "Just you on this street right now" or (n == 1 and "1 other player on this street" or (n .. " other players on this street"))

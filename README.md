@@ -1106,6 +1106,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - [x] Round 31: first optimisation pass (traffic stubs, roof watcher, far NPCs)
 - [x] Round 32: quick fixes (night street lamps and light, build-mode night lift, centre zoom while turning, bubbles, no guest status, room builder walls only, tutorial skip, click-outside close, Rthro walk at 8, chat beeps)
 - [x] Round 33: build mode (catalogue on the right, room numbers 101+ with rename, Room Builder reuses walls, click cut-away walls to edit them, floor per room and lobby floor and roof on the build-mode cards)
+- [x] Round 34: UI remake in the chapter look (glossy bottom tray with 3D icons back, white HUD plates with 3D cash/guest icons at the very top, toasts, day summary, loading screen, main menu, talk box and replies, tutorial card, upgrades page with 3D icons, smaller menu window, mobile sprint button)
 - [ ] 2026-11-12 big request (rounds 32+). Quick fixes: build-mode zoom (right-click + scroll) zooms from the screen centre, not the mouse; build mode too dark at night; street dark at night and street lights give no light; better outside lighting; remove the light on top of doors; remove the status above guests' heads; bigger NPC/staff chat bubbles with a capital first letter, and key words/names coloured and underlined; rooms number 101, 102, 103, 104 (no 201 jump) and are easy to rename; room tool: no presets, walls only; tutorial: no "skip step", only finish it or skip it all; clicking or tapping outside a menu frame closes it; smooth queue in/out; slower guests on a Roblox (Rthro) walk, fix buggy walks; player chat sfx plays fully; car tyres actually spin and better car models.
 - [ ] Build mode: catalogue on the right; flooring and roofing in build mode; the room tool can use existing walls; edit what is already built (walls, doors, rooms); new rooms fully empty (no walls inside, no bathroom area, their own flooring).
 - [ ] UI remake (don't use the current UI as a reference): every menu far better, with more content, and a few are too big; main menu; loading screen; money and guest HUD moved up and redone; notifications; day summary; talking UI; tutorial (a little smaller) and quest UI; upgrades page (drop features nobody needs); mobile sprint button; less clutter overall; keep the old bottom bar with 3D icons and match the chapter UI.
@@ -1232,6 +1233,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Round 31: saved for you (version 346). Nothing to check unless the roof stops hiding while you build.
 - Round 32: saved for you (version 349). Check: a night walk down the street, build mode at night, a long chat line's sound, and how guests walk now.
 - Round 33: saved for you (version 354). Check: in build mode click a room's name card and type a new number (Enter); cycle a room's floor and the lobby floor/roof on the cards; draw a room against an existing wall; click a cut-away wall to move it.
+- Round 34: saved for you (version 359). Check: main menu and loading screen, a full day to see the day summary, talk to a guest, the Upgrades page (U), and on a phone the RUN button next to jump.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1297,6 +1299,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Not checked: the round prompt buttons don't show in my screenshots (Studio's capture skips them), though I tested pressing all of them.
 
 ### Changelog
+- **2026-11-12 (round 34): the UI remake.** Everything now follows the chapter goals' look: white glossy plates, a soft rim, 3D icons and a blue small-caps label over a dark title. The old glossy bottom tray with 3D icons is back. Money and guests sit at the very top on white plates with 3D icons. Toasts are white cards with an accent stripe, a 3D icon and a timer bar. The day summary shows the day's profit counting up, a line per figure (in green, out in red), your rating and what tomorrow brings. New loading screen (sky, sun, sea, sand, a progress bar with a percent) and a white main-menu panel. The talk box shows the speaker's 3D icon (your headshot when you speak) over its edge, and every reply is a white plate with a coloured key and a 3D icon (topics get a stripe). The tutorial card and the Upgrades page match (3D icon per upgrade, LV pills); Room floors left the Upgrades page because build mode picks them per room. The menu window no longer fills the screen. Phones get a RUN button that looks like Roblox's own touch buttons.
 - **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
 - **2026-11-12 (round 31): first optimisation pass.** Client scripts profiled (about 7 ms a frame before). Traffic cars lost 174 invisible pre-20b parts that were still moved every frame (Traffic 0.60 to 0.24 s per 6 s, BulkMoveTo 0.40 to 0.16). Roof no longer counts its descendants every frame. NPCAnim skips joint reads for far NPCs it already handed back.
 - **2026-11-12 (round 33): build mode.** The catalogue slides in from the right. Rooms show numbers 101, 102, 103... in the order they appear and you can rename one by clicking its card in build mode (the door plate follows). The Room Builder reuses walls that are already there. Cut-away walls can be clicked to edit them when nothing is behind. Each room's card picks its own floor; the lobby card picks the lobby floor and the roof.
@@ -2107,6 +2110,16 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Backups: ServerStorage.DevTools.Round31_Backup_20261112 (Traffic, Roof, NPCAnim, Doors, Perf).
 - Server profile (10 s, slot 1): about 0.35 s of script time in total (Plots 0.17, Crowds 0.13, HotelSim guest/staff loops under 0.1 each), heartbeat 0.33 ms, physics 1.5 ms. Nothing worth fixing.
 - Not done yet: NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
+
+### Round 34 (2026-11-12): UI remake
+- Look tokens (Shared.UI `T`): ink white, ink2 245,247,250, cream = dark text 26,32,44, muted, line; gold = brand blue. A chapter plate = white body, UIGradient white to 244,247,250, `UI.rim` 232,237,244 at 2.5, a 3D `C.ICONS` icon overlapping the left edge.
+- Never put a UIGradient on a CanvasGroup you want white children in (it tints them); `UI.shadow` under a semi-transparent panel greys it.
+- Client: `glass()` is the white plate; `glyphTile` swaps cash/guest glyphs for 3D icons; the top bar clash test uses `GuiService.TopbarInset` as the free area; `daySummary(d)` builds the 520x600 card from Notify "day" (earned, wages, upkeep, guests, cleans, uncollected) plus HotelStars and `Clock.seasonData()`.
+- `UI.toast(text, icon, kind)`: icon may be an asset or a `UI.G` glyph name ("close", "check").
+- Talk: `who` (ImageLabel in dGroup) is the speaker icon; `setPlate(name, sub, col, img)`; headshots use `rbxthumb://type=AvatarHeadShot`.
+- UpgradesUI: `UP_ICON` maps upgrade id to a `C.ICONS` key; the "rooms" style group is skipped.
+- Coop `fit()`: window scale capped at `k * 0.82`.
+- Mirroring big scripts: `execute_luau` output caps at about 100k characters and anything over about 60k is saved to a tool-results file, so concatenate sources with `@@@FILE` markers in `_G`, return 60k slices padded to 95k, and reassemble with a script.
 
 ### Round 33 (2026-11-12): build mode and room numbers
 - BuildClient: `shopWrap` anchors bottom-right (404x760 at 1,-16 / 1,-14) and slides in from +460; `edWrap` sits top-left (18,140); layout() centres the view in what is left of the screen.

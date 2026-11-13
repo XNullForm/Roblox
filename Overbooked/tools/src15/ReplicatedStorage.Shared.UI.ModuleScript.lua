@@ -1214,8 +1214,9 @@ end
 
 ---------------------------------------------------------------- toasts
 
--- UI.toast("Room 104 is open!", icon, "good"|"bad"|nil): notifications drop in under the top bar as dark pills:
--- a coloured icon tile, the words, and a thin line that runs out as it expires. The same message again doesn't
+-- UI.toast("Room 104 is open!", icon, "good"|"bad"|nil): notifications drop in under the top bar as white glossy
+-- cards (round 34, the chapter goals' look): a colour stripe, the 3D icon (or a colour tile with a glyph), the words,
+-- and a line that runs out as it expires. The same message again doesn't
 -- stack: its pill counts up (x2, x3) and its timer restarts. At most four show; click one to dismiss it.
 local toastGui, toastList
 local liveToasts = {}
@@ -1242,36 +1243,44 @@ function UI.toast(text, icon, kind)
 		end
 	end
 	local accent = kind == "bad" and T.red or kind == "good" and T.green or T.brand
-	local holder = UI.new("Frame", { Size = UDim2.fromOffset(0, 46), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, LayoutOrder = math.floor(os.clock() * 100), Parent = toastList })
+	-- callers pass either an image or a glyph name ("close", "check"); a name draws in the accent tile
+	local glyph = type(icon) == "string" and not icon:find("://", 1, true) and UI.G[icon] or nil
+	if type(icon) == "string" and not icon:find("://", 1, true) then icon = nil end
+	local holder = UI.new("Frame", { Size = UDim2.fromOffset(0, 52), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, LayoutOrder = math.floor(os.clock() * 100), Parent = toastList })
 	local card = UI.new("CanvasGroup", { Size = UDim2.fromOffset(0, 46), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.hud, BackgroundTransparency = 0.06, GroupTransparency = 1, Position = UDim2.fromOffset(0, -12), Parent = holder })
-	UI.corner(card, 12)
+	card.BackgroundColor3 = T.ink
+	card.BackgroundTransparency = 0
+	card.Size = UDim2.fromOffset(0, 52)
+	UI.corner(card, 16)
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = card })
 	local st = Instance.new("UIStroke")
-	st.Color = T.hudLine
-	st.Transparency = 0.3
+	st.Color = Color3.fromRGB(232, 237, 244)
+	st.Thickness = 2
 	st.Parent = card
-	local row = UI.new("Frame", { Size = UDim2.fromOffset(0, 46), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Parent = card })
-	UI.pad(row, 8, 0, 16, 0)
+	UI.new("Frame", { Name = "Stripe", Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = accent, BorderSizePixel = 0, ZIndex = 2, Parent = card })
+	local row = UI.new("Frame", { Size = UDim2.fromOffset(0, 52), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Parent = card })
+	UI.pad(row, 12, 0, 18, 0)
 	UI.list(row, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
-	local tile = UI.new("Frame", { Size = UDim2.fromOffset(30, 30), BackgroundColor3 = accent, LayoutOrder = 1, Parent = row })
-	UI.corner(tile, 8)
+	local tile = UI.new("Frame", { Size = UDim2.fromOffset(icon and 40 or 32, icon and 40 or 32), BackgroundColor3 = accent, BackgroundTransparency = icon and 1 or 0, LayoutOrder = 1, Parent = row })
+	UI.corner(tile, 9)
 	UI.new("ImageLabel", {
-		Image = icon or (kind == "bad" and UI.G.close or kind == "good" and UI.G.check or UI.G.bell),
-		ImageColor3 = icon and Color3.new(1, 1, 1) or T.white, Size = UDim2.fromOffset(icon and 24 or 16, icon and 24 or 16),
+		Image = icon or glyph or (kind == "bad" and UI.G.close or kind == "good" and UI.G.check or UI.G.bell),
+		ImageColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, Size = icon and UDim2.fromScale(1, 1) or UDim2.fromOffset(18, 18),
 		Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Parent = tile,
 	})
 	local label = UI.new("TextLabel", {
-		Text = text, TextSize = 16, FontFace = UI.F.bold, TextColor3 = T.hudText, AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, 46), LayoutOrder = 2, Parent = row,
+		Text = text, TextSize = 17, FontFace = UI.F.heavy, TextColor3 = T.cream, AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 52), LayoutOrder = 2, Parent = row,
 	})
-	UI.new("UISizeConstraint", { MaxSize = Vector2.new(440, 46), Parent = label })
+	UI.new("UISizeConstraint", { MaxSize = Vector2.new(460, 52), Parent = label })
 	label.TextTruncate = Enum.TextTruncate.AtEnd
 	local badge = UI.new("TextLabel", {
-		Text = "", TextSize = 13, FontFace = UI.F.heavy, TextColor3 = T.hudText, BackgroundColor3 = T.hud2, Visible = false,
+		Text = "", TextSize = 13, FontFace = UI.F.heavy, TextColor3 = T.white, BackgroundColor3 = accent, Visible = false,
 		AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 22), LayoutOrder = 3, Parent = row,
 	})
-	UI.corner(badge, 6)
-	UI.pad(badge, 6, 0, 6, 0)
-	local bar = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2), BackgroundColor3 = accent, Parent = card })
+	UI.corner(badge, 11)
+	UI.pad(badge, 7, 0, 7, 0)
+	local bar = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 3), Position = UDim2.new(0, 0, 1, -3), BackgroundColor3 = accent, BackgroundTransparency = 0.25, Parent = card })
 	local hit = UI.new("TextButton", { Text = "", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5, Parent = card })
 	local me = { text = text, alive = true, count = 1, badge = badge }
 	local serial = 0
@@ -1288,8 +1297,8 @@ function UI.toast(text, icon, kind)
 		serial += 1
 		local mine = serial
 		if barTween then barTween:Cancel() end
-		bar.Size = UDim2.new(1, 0, 0, 2)
-		barTween = UI.tween(bar, LIFE, { Size = UDim2.new(0, 0, 0, 2) }, Enum.EasingStyle.Linear)
+		bar.Size = UDim2.new(1, 0, 0, 3)
+		barTween = UI.tween(bar, LIFE, { Size = UDim2.new(0, 0, 0, 3) }, Enum.EasingStyle.Linear)
 		task.delay(LIFE, function() if mine == serial then leave() end end)
 	end
 	me.leave = leave

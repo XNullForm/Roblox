@@ -26,11 +26,20 @@ local function hotel()
 	return plots and plots:FindFirstChild(player:GetAttribute("Plot") or "")
 end
 
-local function block(parent, h, order)
-	local f = UI.new("Frame", { Size = UDim2.new(1, 0, 0, h), BackgroundColor3 = T.ink2, LayoutOrder = order or 0, Parent = parent })
-	if h == 0 then f.AutomaticSize = Y end
-	UI.corner(f, 14)
+-- round 34: the chapter look: white glossy plates with a soft rim, a 3D icon per upgrade
+local ICON = require(Shared:WaitForChild("Config")).ICONS
+local UP_ICON = { curb = "hotel", ads = "phone", rates = "cash", tips = "gift", comfort = "bed", training = "medal", payroll = "staff", welcome = "bell" }
+local function plateLook(f)
+	f.BackgroundColor3 = T.ink
+	UI.corner(f, 16)
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = f })
+	UI.rim(f, Color3.fromRGB(232, 237, 244), 2.5)
 	return f
+end
+local function block(parent, h, order)
+	local f = UI.new("Frame", { Size = UDim2.new(1, 0, 0, h), LayoutOrder = order or 0, Parent = parent })
+	if h == 0 then f.AutomaticSize = Y end
+	return plateLook(f)
 end
 local function caps(parent, text, props)
 	local l = UI.label(parent, string.upper(text), 12, { FontFace = UI.F.heavy, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16), TextXAlignment = LEFT })
@@ -75,9 +84,10 @@ local story = {}
 do
 	local f = block(left, 176, 1)
 	f.Name = "Comeback"
-	caps(f, "The Seabreeze comeback", { Position = UDim2.fromOffset(18, 16), Size = UDim2.new(1, -230, 0, 16) })
-	story.stage = text(f, "", 26, { FontFace = UI.F.black, Position = UDim2.fromOffset(18, 36), Size = UDim2.new(1, -230, 0, 30) })
-	story.text = text(f, "", 15, { FontFace = UI.F.body, TextColor3 = T.muted, Position = UDim2.fromOffset(18, 70), Size = UDim2.new(1, -230, 0, 40), TextWrapped = true, TextYAlignment = TOP })
+	UI.icon(f, ICON.hotel, 72, { Position = UDim2.fromOffset(12, 14), BackgroundTransparency = 1 })
+	caps(f, "The Seabreeze comeback", { Position = UDim2.fromOffset(96, 16), Size = UDim2.new(1, -310, 0, 16), TextColor3 = T.brand, FontFace = UI.F.black })
+	story.stage = text(f, "", 26, { FontFace = UI.F.black, Position = UDim2.fromOffset(96, 36), Size = UDim2.new(1, -310, 0, 30) })
+	story.text = text(f, "", 15, { FontFace = UI.F.body, TextColor3 = T.muted, Position = UDim2.fromOffset(96, 70), Size = UDim2.new(1, -310, 0, 40), TextWrapped = true, TextYAlignment = TOP })
 	story.btn, story.btnText = UI.button(f, {
 		name = "Buy", text = "Buy", kind = "green", size = UDim2.fromOffset(176, 50), pos = UDim2.new(1, -18, 0, 18), anchor = Vector2.new(1, 0), textSize = 19, radius = 12,
 		onClick = function() buy("curb") end,
@@ -119,14 +129,13 @@ do
 	cards.list = {}
 	for i, def in ipairs(U.LIST) do
 		if def.id ~= "curb" then
-			local card = UI.new("Frame", { Name = def.id, BackgroundColor3 = T.ink2, LayoutOrder = i, Parent = grid })
-			UI.corner(card, 14)
-			-- level tile
-			local tile = UI.new("Frame", { Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(14, 14), BackgroundColor3 = T.ink3, Parent = card })
-			UI.corner(tile, 12)
-			local num = UI.label(tile, "0", 22, { FontFace = UI.F.black, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 24), Position = UDim2.fromOffset(0, 5), TextXAlignment = Enum.TextXAlignment.Center })
-			UI.label(tile, "LEVEL", 8, { FontFace = UI.F.heavy, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 10), Position = UDim2.fromOffset(0, 30), TextXAlignment = Enum.TextXAlignment.Center })
-			text(card, def.name, 19, { FontFace = UI.F.black, Position = UDim2.fromOffset(72, 12), Size = UDim2.new(1, -86, 0, 22) })
+			local card = plateLook(UI.new("Frame", { Name = def.id, LayoutOrder = i, Parent = grid }))
+			UI.icon(card, ICON[UP_ICON[def.id] or def.icon] or ICON.upgrade, 52, { Position = UDim2.fromOffset(10, 10), BackgroundTransparency = 1 })
+			-- the level pill, top right
+			local tile = UI.new("Frame", { Size = UDim2.fromOffset(58, 22), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 12), BackgroundColor3 = T.ink3, Parent = card })
+			UI.corner(tile, 11)
+			local num = UI.label(tile, "LV 0", 12, { FontFace = UI.F.black, TextColor3 = T.muted, Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center })
+			text(card, def.name, 19, { FontFace = UI.F.black, Position = UDim2.fromOffset(72, 12), Size = UDim2.new(1, -150, 0, 22), TextTruncate = Enum.TextTruncate.AtEnd })
 			text(card, def.desc, 13, { FontFace = UI.F.body, TextColor3 = T.muted, Position = UDim2.fromOffset(72, 35), Size = UDim2.new(1, -86, 0, 32), TextWrapped = true, TextYAlignment = TOP })
 			-- level bar: one slim piece per level
 			local segs = {}
@@ -158,8 +167,9 @@ do
 	UI.list(head, nil, 2)
 	UI.pad(head, 4, 2, 4, 2)
 	caps(head, "Hotel style")
-	text(head, "Free to change, as often as you like.", 13, { FontFace = UI.F.body, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16) })
+	text(head, "Free to change. Room floors: pick them per room in build mode.", 13, { FontFace = UI.F.body, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16), TextWrapped = true, AutomaticSize = Y })
 	for gi, g in ipairs(U.STYLES) do
+		if g.key == "rooms" then continue end -- round 34: room floors live in build mode (per room)
 		local card = block(right, 0, 1 + gi)
 		card.Name = "Style_" .. g.key
 		UI.list(card, nil, 10)
@@ -237,7 +247,7 @@ local function refresh()
 		local lv = h and U.level(h, id) or 0
 		have += lv
 		total += def.max
-		c.num.Text = tostring(lv)
+		c.num.Text = "LV " .. lv .. "/" .. def.max
 		c.num.TextColor3 = lv > 0 and T.brand or T.muted
 		c.tile.BackgroundColor3 = lv > 0 and T.brandSoft or T.ink3
 		for k, s in ipairs(c.segs) do s.BackgroundColor3 = k <= lv and T.brand or T.ink3 end
