@@ -537,3 +537,15 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Server profile (10 s, slot 1): about 0.35 s of script time in total (Plots 0.17, Crowds 0.13, HotelSim guest/staff loops under 0.1 each), heartbeat 0.33 ms, physics 1.5 ms. Nothing worth fixing.
 - Not done yet: NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
 
+## Round 32 (2026-11-12): quick fixes from the big request
+- Street lamps: the lamp mesh's origin is at its base, so the SpotLight in Glow lit the ground from inside. Each workspace StreetLamp's light moved into an Attachment `Glow.LightAt` at the head (world-aligned, Face Bottom), brightness 3, range 40, angle 130. ServerStorage.CityProps.StreetLamp has no light, so nothing to change there.
+- Lighting: the night keys are brighter (amb 46,52,82, out 70,80,122, bright 0.8, expo -0.12). Build mode at night (`bn = buildK * k.stars`) lerps the ambients toward grey and adds brightness and exposure.
+- BuildClient: the wheel zoom ignores the cursor while `input.rightDown`. Room Builder: `KITS` is reassigned to just "Just Walls"; the type rows and the furnish toggle are hidden; the panel is 372 tall; default `rb.kit = "empty"`, `furnish = false`.
+- Bubbles: SAY_SIZE 22, SAY_W 310, billboards 400x300. `tidy()` capitalises the first letter. `richLine()` (RichText) colours and underlines $ amounts, "Room N", staff first names and player display names. The status disc shows only for staff (`m.staff`).
+- Speech babble passes `dur = S.estimate(line)` and clamps at 9 s (was 3.4). VoiceFX thins to 60 beats (was 30).
+- TutorialClient: `canSkip = false`; the check-in step also completes when a receptionist is hired; the card scales by 0.85.
+- UI.panel: with `onClose` (and `outsideClose ~= false`), a MouseButton1 or Touch outside the holder closes it. The panel must be on screen and every ancestor visible; it does nothing while Building, or when the click lands on another ScreenGui's button or TextBox. Coop's Dim also closes the menu on an outside click.
+- Config.ANIM walk/run = Rthro 2510202577 / 2510198475, `C.WALK_SPEED = 8` (pure walk in Looks.moveBlend). Looks walk ids and RUN_ANIM match; NPCAnim CORE_ANIM lists them.
+- Deferred: room numbers. Custom rooms take ids from Rooms.FIRST_ID = 201, and ids are tied to wing slots (C.ROOM_SLOTS 104-111) and saves, so the plan is a stored display label (and renaming) in round 33. The queue was measured but not changed (no free rooms in the test, so the line never moved).
+- Mirrors refreshed: BuildClient, UI, NPCAnim. Changed live but not mirrored: Lighting, Bubbles, Speech, VoiceFX, TutorialClient, Coop, Config, Looks.
+

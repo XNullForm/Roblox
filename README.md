@@ -1104,6 +1104,11 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - [ ] Round 15 still to do: bigger gameplay changes for the other minigames (beds, showers, toilets, desk, cooking, repairs). The tailcoat, short jacket, tuxedo, waistcoat, polo and hi-vis vest are still built from parts
 - [x] Round 30: guests' hands on the desk, card, duvet, shower tap and flush
 - [x] Round 31: first optimisation pass (traffic stubs, roof watcher, far NPCs)
+- [x] Round 32: quick fixes (night street lamps and light, build-mode night lift, centre zoom while turning, bubbles, no guest status, room builder walls only, tutorial skip, click-outside close, Rthro walk at 8, chat beeps)
+- [ ] 2026-11-12 big request (rounds 32+). Quick fixes: build-mode zoom (right-click + scroll) zooms from the screen centre, not the mouse; build mode too dark at night; street dark at night and street lights give no light; better outside lighting; remove the light on top of doors; remove the status above guests' heads; bigger NPC/staff chat bubbles with a capital first letter, and key words/names coloured and underlined; rooms number 101, 102, 103, 104 (no 201 jump) and are easy to rename; room tool: no presets, walls only; tutorial: no "skip step", only finish it or skip it all; clicking or tapping outside a menu frame closes it; smooth queue in/out; slower guests on a Roblox (Rthro) walk, fix buggy walks; player chat sfx plays fully; car tyres actually spin and better car models.
+- [ ] Build mode: catalogue on the right; flooring and roofing in build mode; the room tool can use existing walls; edit what is already built (walls, doors, rooms); new rooms fully empty (no walls inside, no bathroom area, their own flooring).
+- [ ] UI remake (don't use the current UI as a reference): every menu far better, with more content, and a few are too big; main menu; loading screen; money and guest HUD moved up and redone; notifications; day summary; talking UI; tutorial (a little smaller) and quest UI; upgrades page (drop features nobody needs); mobile sprint button; less clutter overall; keep the old bottom bar with 3D icons and match the chapter UI.
+- [ ] Content: first start = clean your hotel; cutscenes with dialogue at the story start and at milestones; world events (busy days, big storms, more) that change demand, with a notification; rewrite all NPC and staff dialogue so it fits where they are (outside, in their room, etc.); many more guest variants; better clothing (3D shirts with 2D pants look wrong) and accessories; many more people on the sidewalks; better and smaller safe at the reception desk; the "needs cleaning" sign as a real 3D sign; fix door clipping; better door-handle grabbing and more door sfx, used by NPCs, staff and other players; more co-op; PS5, Xbox and mobile controls and content; more game-changing upgrades and mechanics.
 - [ ] Next ideas: guests picking up and setting down their own bags; sofas, chairs, tables, TV and vending machine with real contact; footsteps on the heel strike
 
 ### Your preferences (this game)
@@ -1224,6 +1229,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 ### What you must do yourself
 - Round 30: the place is saved for you (version 345). Watch a guest check in, shower and go to bed, and tell me if any reach looks off.
 - Round 31: saved for you (version 346). Nothing to check unless the roof stops hiding while you build.
+- Round 32: saved for you (version 349). Check: a night walk down the street, build mode at night, a long chat line's sound, and how guests walk now.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1291,6 +1297,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 ### Changelog
 - **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
 - **2026-11-12 (round 31): first optimisation pass.** Client scripts profiled (about 7 ms a frame before). Traffic cars lost 174 invisible pre-20b parts that were still moved every frame (Traffic 0.60 to 0.24 s per 6 s, BulkMoveTo 0.40 to 0.16). Roof no longer counts its descendants every frame. NPCAnim skips joint reads for far NPCs it already handed back.
+- **2026-11-12 (round 32): first batch of the big request.** Street lamps now light the street (their SpotLight sat at the ground inside the lamp base); nights are brighter; build mode lifts the light at night; turning with right-drag and scrolling zooms from the centre; NPC bubbles are bigger, start with a capital and colour + underline names, rooms and money; guests lost the status disc; the Room Builder only builds walls and a door; the tutorial has no Skip step (finish it or skip it all) and is 15% smaller; a click or tap outside a menu closes it; guests walk on Roblox's Rthro walk at 8 studs/s; long chat lines keep beeping to the end.
   - [x] **Checking in:** both hands on the desk's counter, a finger drum, a look round the lobby.
   - [x] **Checking out:** a bank card slid across the counter and tapped (left hand, so a bag in the right still works).
   - [x] **Bed:** grabs the duvet, folds it back and pats the pillow before lying down.
@@ -2097,4 +2104,16 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Backups: ServerStorage.DevTools.Round31_Backup_20261112 (Traffic, Roof, NPCAnim, Doors, Perf).
 - Server profile (10 s, slot 1): about 0.35 s of script time in total (Plots 0.17, Crowds 0.13, HotelSim guest/staff loops under 0.1 each), heartbeat 0.33 ms, physics 1.5 ms. Nothing worth fixing.
 - Not done yet: NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
+
+### Round 32 (2026-11-12): quick fixes from the big request
+- Street lamps: the lamp mesh's origin is at its base, so the SpotLight in Glow lit the ground from inside. Each workspace StreetLamp's light moved into an Attachment `Glow.LightAt` at the head (world-aligned, Face Bottom), brightness 3, range 40, angle 130. ServerStorage.CityProps.StreetLamp has no light, so nothing to change there.
+- Lighting: the night keys are brighter (amb 46,52,82, out 70,80,122, bright 0.8, expo -0.12). Build mode at night (`bn = buildK * k.stars`) lerps the ambients toward grey and adds brightness and exposure.
+- BuildClient: the wheel zoom ignores the cursor while `input.rightDown`. Room Builder: `KITS` is reassigned to just "Just Walls"; the type rows and the furnish toggle are hidden; the panel is 372 tall; default `rb.kit = "empty"`, `furnish = false`.
+- Bubbles: SAY_SIZE 22, SAY_W 310, billboards 400x300. `tidy()` capitalises the first letter. `richLine()` (RichText) colours and underlines $ amounts, "Room N", staff first names and player display names. The status disc shows only for staff (`m.staff`).
+- Speech babble passes `dur = S.estimate(line)` and clamps at 9 s (was 3.4). VoiceFX thins to 60 beats (was 30).
+- TutorialClient: `canSkip = false`; the check-in step also completes when a receptionist is hired; the card scales by 0.85.
+- UI.panel: with `onClose` (and `outsideClose ~= false`), a MouseButton1 or Touch outside the holder closes it. The panel must be on screen and every ancestor visible; it does nothing while Building, or when the click lands on another ScreenGui's button or TextBox. Coop's Dim also closes the menu on an outside click.
+- Config.ANIM walk/run = Rthro 2510202577 / 2510198475, `C.WALK_SPEED = 8` (pure walk in Looks.moveBlend). Looks walk ids and RUN_ANIM match; NPCAnim CORE_ANIM lists them.
+- Deferred: room numbers. Custom rooms take ids from Rooms.FIRST_ID = 201, and ids are tied to wing slots (C.ROOM_SLOTS 104-111) and saves, so the plan is a stored display label (and renaming) in round 33. The queue was measured but not changed (no free rooms in the test, so the line never moved).
+- Mirrors refreshed: BuildClient, UI, NPCAnim. Changed live but not mirrored: Lighting, Bubbles, Speech, VoiceFX, TutorialClient, Coop, Config, Looks.
 

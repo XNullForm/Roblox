@@ -17,7 +17,8 @@ local Faces = require(RS:WaitForChild("Shared"):WaitForChild("Faces")) -- round 
 local CORE_ANIM = { ["rbxassetid://507766666"] = true, ["rbxassetid://507766951"] = true, ["rbxassetid://507777826"] = true,
 	["rbxassetid://507767714"] = true, ["rbxassetid://2506281703"] = true, ["rbxassetid://507776043"] = true,
 	["rbxassetid://913402848"] = true, ["rbxassetid://913376220"] = true, ["rbxassetid://913384386"] = true,
-	["rbxassetid://180435571"] = true, ["rbxassetid://180426354"] = true, ["rbxassetid://180435792"] = true }
+	["rbxassetid://180435571"] = true, ["rbxassetid://180426354"] = true, ["rbxassetid://180435792"] = true,
+	["rbxassetid://2510202577"] = true, ["rbxassetid://2510198475"] = true } -- round 32: Rthro walk / run
 local player = Players.LocalPlayer
 
 local CF, V3, ANG = CFrame.new, Vector3.new, CFrame.Angles

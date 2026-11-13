@@ -638,6 +638,31 @@ function UI.panel(parent, size, pos, opts)
 			c.Position = UDim2.new(1, -15, 0, 15)
 		end
 	end
+	-- round 32: a click or tap outside an open panel closes it (not one on the panel, and not one on another
+	-- screen's button; build-mode panels stay, the world under them is where you build)
+	if opts.onClose and opts.outsideClose ~= false and RunService:IsClient() then
+		local lp = Players.LocalPlayer
+		UIS.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+			if not holder.Parent or lp:GetAttribute("Building") then return end
+			local sg = holder:FindFirstAncestorWhichIsA("LayerCollector")
+			if not (sg and sg.Enabled) then return end
+			local o = holder
+			while o and o ~= sg do
+				if o:IsA("GuiObject") and not o.Visible then return end
+				o = o.Parent
+			end
+			local p, a, s = input.Position, holder.AbsolutePosition, holder.AbsoluteSize
+			if s.X < 2 or (p.X >= a.X and p.X <= a.X + s.X and p.Y >= a.Y and p.Y <= a.Y + s.Y) then return end
+			local vp = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1e4, 1e4)
+			if a.X > vp.X or a.Y > vp.Y or a.X + s.X < 0 or a.Y + s.Y < 0 then return end -- parked off screen
+			local pg = lp:FindFirstChildOfClass("PlayerGui")
+			for _, g in ipairs(pg and pg:GetGuiObjectsAtPosition(p.X, p.Y) or {}) do
+				if not g:IsDescendantOf(sg) and (g:IsA("GuiButton") or g:IsA("TextBox")) then return end
+			end
+			opts.onClose()
+		end)
+	end
 	return holder, body
 end
 

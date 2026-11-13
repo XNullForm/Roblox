@@ -71,7 +71,7 @@ local S = {
 	busy = false,
 	sellArmed = false,
 	shape = { size = Catalog.SHAPE_DEFAULT, color = Catalog.SWATCHES[8], mat = "SmoothPlastic", ghost = false },
-	rb = { kit = "guest", wall = "Wall", door = "RoomDoor", furnish = true }, -- the Room Builder's choices
+	rb = { kit = "empty", wall = "Wall", door = "RoomDoor", furnish = false }, -- the Room Builder's choices (round 32: walls only)
 }
 local ghost -- { id, model, yaw, dy, target, shown, ok, why, moving, spin, opts }
 local selected -- placed model (or the desk) with the card open
@@ -2085,6 +2085,7 @@ end
 do
 	local RB = S.rb
 	local RoomPlan = require(Shared:WaitForChild("RoomPlan"))
+	-- round 32: no presets, the Room Builder only puts up walls and a door (the old kits stay below, unused)
 	local KITS = {
 		{ id = "guest", name = "Guest Room", icon = "bed", color = T.blue, best = "4 x 4",
 			items = { { "bed", { "Bed" } }, { "bath", { "Shower" } }, { "bath", { "Toilet" } }, { "night", { "Nightstand" } }, { "corner", { "FloorLamp" } }, { "center", { "Rug" } } } },
@@ -2096,8 +2097,8 @@ do
 				{ "side", { "TVStand" } }, { "side", { "Sofa", "Armchair" } }, { "corner", { "Wardrobe" } }, { "corner", { "ArcLamp", "FloorLamp" } }, { "corner", { "IndoorPalm", "Plant" } }, { "center", { "Rug" } } } },
 		{ id = "staff", name = "Staff Room", icon = "staff", color = T.green, best = "4 x 4",
 			items = { { "side", { "StaffLocker" } }, { "center", { "StaffTable" } }, { "corner", { "CoffeeBar", "WaterCooler" } }, { "corner", { "Plant" } } } },
-		{ id = "empty", name = "Just Walls", icon = "hammer", color = Color3.fromRGB(177, 185, 196), items = {} },
 	}
+	KITS = { { id = "empty", name = "Just Walls", icon = "hammer", color = Color3.fromRGB(177, 185, 196), items = {} } }
 	local WALLS = { "Wall", "WallSage", "WallBrick", "WallWood", "WallWindow", "WallWindowBrick", "WallGlass" }
 	local DOORS = { "RoomDoor", "RoomDoorModern", "RoomDoorSuite", "DoorWhite", "Door", "DoorGlass" }
 
@@ -2262,7 +2263,7 @@ do
 
 	---------------------------------------------------------------- the panel (right)
 
-	local wrap = wrapper("RoomBuilder", UDim2.fromOffset(330, 664), UDim2.new(1, -18, 0, 84), Vector2.new(1, 0))
+	local wrap = wrapper("RoomBuilder", UDim2.fromOffset(330, 372), UDim2.new(1, -18, 0, 84), Vector2.new(1, 0))
 	wrap.Visible = false
 	local holder, body = UI.panel(wrap, UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5), {
 		name = "Builder", radius = 20, title = "Room Builder", subtitle = "Drag on the floor to build", icon = ICON.roomReady,
@@ -2273,10 +2274,9 @@ do
 	local function section(text, order)
 		UI.label(content, text, 13, { FontFace = UI.F.display, TextColor3 = T.muted, LayoutOrder = order, Size = UDim2.new(1, 0, 0, 16) })
 	end
-	section("ROOM TYPE", 1)
 	local typeRows = {}
 	for i, k in ipairs(KITS) do
-		local b = UI.new("TextButton", { Name = "Kit_" .. k.id, Text = "", AutoButtonColor = false, Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = T.ink2, LayoutOrder = 1 + i, Parent = content })
+		local b = UI.new("TextButton", { Name = "Kit_" .. k.id, Text = "", AutoButtonColor = false, Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = T.ink2, LayoutOrder = 1 + i, Visible = false, Parent = content })
 		UI.corner(b, 14)
 		local rim = UI.rim(b, T.line, 2)
 		UI.badge(b, 38, k.color, ICON[k.icon] or ICON.roomReady, { Position = UDim2.new(0, 8, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5) })
@@ -2345,7 +2345,7 @@ do
 	section("DOOR", 12)
 	tileRow(13, DOORS, "door")
 
-	local fRow = UI.new("Frame", { Name = "Furnish", Size = UDim2.new(1, 0, 0, 50), BackgroundColor3 = T.ink2, LayoutOrder = 20, Parent = content })
+	local fRow = UI.new("Frame", { Name = "Furnish", Size = UDim2.new(1, 0, 0, 50), BackgroundColor3 = T.ink2, LayoutOrder = 20, Visible = false, Parent = content })
 	UI.corner(fRow, 14)
 	UI.rim(fRow, T.line, 2)
 	UI.label(fRow, "Furnish it for me", 16, { FontFace = UI.F.display, Position = UDim2.fromOffset(14, 7), Size = UDim2.new(1, -90, 0, 20) })
@@ -3054,7 +3054,8 @@ UIS.InputChanged:Connect(function(io, gp)
 		local old = goal.dist
 		local new = math.clamp(old * (1 - io.Position.Z * 0.12), 16, 105)
 		-- (zooming in only: zooming out about the cursor throws the view sideways)
-		local p = new < old and not UI.gamepad() and floorPoint() or nil
+		-- round 32: while right-dragging (turning) it zooms straight in from the centre
+		local p = new < old and not UI.gamepad() and not input.rightDown and floorPoint() or nil
 		if p and (p - goal.focus).Magnitude < 160 then goal.focus = p + (goal.focus - p) * (new / old) end
 		goal.dist = new
 	end
