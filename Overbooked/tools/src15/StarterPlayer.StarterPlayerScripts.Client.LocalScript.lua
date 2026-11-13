@@ -167,11 +167,12 @@ end
 -- round 41: a new hotel badge in the bottom-left corner (clear of Roblox's buttons and the chat window): a deep navy
 -- card with a blue level column, the hotel's name in white, big stars and a thick XP bar along the bottom.
 local lvSlot = UI.new("TextButton", { Name = "Level", Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = cornerGroup })
-UI.shadow(lvSlot, { drop = 6, transparency = 0.55 })
+UI.shadow(lvSlot, { drop = 5, transparency = 0.7 })
 local lvBody = UI.new("Frame", { Name = "Body", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), ClipsDescendants = true, Parent = lvSlot })
 UI.corner(lvBody, 18)
-UI.grad(lvBody, Color3.fromRGB(40, 52, 78), Color3.fromRGB(20, 26, 40), 90)
-UI.rim(lvBody, Color3.fromRGB(86, 104, 140), 2).Transparency = 0
+-- round 44: the white glossy plate of the rest of the HUD (it was a navy card)
+UI.grad(lvBody, Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250), 90)
+UI.rim(lvBody, CARD_RIM, 2.5).Transparency = 0
 local lvTile = UI.new("Frame", { Name = "Lv", Size = UDim2.new(0, 70, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 3, Parent = lvBody })
 UI.grad(lvTile, Color3.fromRGB(64, 160, 255), T.brandDk, 90)
 UI.gloss(lvTile, 0, 0.3)
@@ -180,24 +181,24 @@ UI.label(lvTile, "LEVEL", 13, { FontFace = UI.F.black, TextColor3 = Color3.new(1
 local levelNum = UI.label(lvTile, "1", 32, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 36), ZIndex = 5 })
 UI.textStroke(levelNum, 2, 0.6)
 local starBadge = lvTile
-local hotelName = UI.label(lvBody, "", 20, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(84, 9), Size = UDim2.new(1, -96, 0, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
+local hotelName = UI.label(lvBody, "", 20, { FontFace = UI.F.black, TextColor3 = Color3.fromRGB(34, 44, 64), Position = UDim2.fromOffset(84, 9), Size = UDim2.new(1, -96, 0, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
 local STAR = 18
 local rateSlot = UI.new("Frame", { Name = "Rating", Size = UDim2.fromOffset(170, STAR), Position = UDim2.fromOffset(84, 37), BackgroundTransparency = 1, ZIndex = 4, Parent = lvBody })
 local starClips = {}
 for i = 1, 5 do
 	local holder = UI.new("Frame", { Size = UDim2.fromOffset(STAR, STAR), Position = UDim2.fromOffset((i - 1) * (STAR + 2), 0), BackgroundTransparency = 1, ZIndex = 4, Parent = rateSlot })
-	UI.new("ImageLabel", { Image = G.star, ImageColor3 = Color3.fromRGB(70, 82, 106), Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
+	UI.new("ImageLabel", { Image = G.star, ImageColor3 = Color3.fromRGB(218, 224, 234), Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
 	local clip = UI.new("Frame", { Size = UDim2.fromOffset(0, STAR), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 5, Parent = holder })
 	UI.new("ImageLabel", { Image = G.star, ImageColor3 = T.sun, Size = UDim2.fromOffset(STAR, STAR), ZIndex = 5, Parent = clip })
 	starClips[i] = clip
 end
-local starNum = UI.label(rateSlot, "1.0", 16, { FontFace = UI.F.black, TextColor3 = T.sun, Position = UDim2.fromOffset(5 * (STAR + 2) + 4, -1), Size = UDim2.fromOffset(40, STAR + 2), ZIndex = 5 })
-local xpTrack = UI.new("Frame", { Name = "XP", Size = UDim2.new(1, -96, 0, 10), Position = UDim2.new(0, 84, 1, -18), BackgroundColor3 = Color3.fromRGB(14, 18, 28), ZIndex = 4, Parent = lvBody })
+local starNum = UI.label(rateSlot, "1.0", 16, { FontFace = UI.F.black, TextColor3 = Color3.fromRGB(226, 160, 20), Position = UDim2.fromOffset(5 * (STAR + 2) + 4, -1), Size = UDim2.fromOffset(40, STAR + 2), ZIndex = 5 })
+local xpTrack = UI.new("Frame", { Name = "XP", Size = UDim2.new(1, -96, 0, 10), Position = UDim2.new(0, 84, 1, -18), BackgroundColor3 = Color3.fromRGB(226, 231, 238), ZIndex = 4, Parent = lvBody })
 UI.corner(xpTrack, 5)
 local xpFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 5, Parent = xpTrack })
 UI.corner(xpFill, 5)
 UI.grad(xpFill, Color3.fromRGB(120, 200, 255), T.brand, 90)
-local xpText = UI.label(lvBody, "", 14, { FontFace = UI.F.heavy, TextColor3 = Color3.fromRGB(176, 190, 214), TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -12, 0, 38), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(110, 16), ZIndex = 5 })
+local xpText = UI.label(lvBody, "", 14, { FontFace = UI.F.heavy, TextColor3 = Color3.fromRGB(110, 120, 138), TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -12, 0, 38), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(110, 16), ZIndex = 5 })
 local levelLbl = xpText
 do
 	local sc = UI.scaleOf(lvSlot)

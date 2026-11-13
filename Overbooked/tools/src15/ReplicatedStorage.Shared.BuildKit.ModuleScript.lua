@@ -61,6 +61,14 @@ return function(api)
 		UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(40, 54, 80), Color3.fromRGB(20, 28, 44)), Parent = f })
 		UI.stroke(f, 1.5, Color3.fromRGB(74, 94, 128), 0.05)
 	end
+	-- round 44: the tool rail wears the HUD's white glossy plate (cash, guests, clock, bottom bar)
+	local RAIL_CHIP, RAIL_HOVER, RAIL_TEXT = Color3.fromRGB(240, 244, 250), Color3.fromRGB(222, 232, 248), Color3.fromRGB(96, 108, 130)
+	local function whitePlate(f, r)
+		f.BackgroundColor3 = WHITE
+		UI.corner(f, r or 18)
+		UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = f })
+		UI.rim(f, Color3.fromRGB(232, 237, 244), 2.5)
+	end
 	local function txt(parent, text, size, props)
 		props = props or {}
 		props.FontFace = props.FontFace or UI.F.heavy
@@ -560,7 +568,7 @@ return function(api)
 		Name = "Rail", Size = UDim2.fromOffset(88, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromScale(0, 0.5),
 		AnchorPoint = Vector2.new(0, 0.5), Parent = railWrap,
 	})
-	glass(rail, 24)
+	whitePlate(rail, 24)
 	UI.pad(rail, 8, 10, 8, 10)
 	UI.list(rail, nil, 6, Enum.HorizontalAlignment.Center)
 	K.railWrap, K.rail = railWrap, rail
@@ -575,11 +583,13 @@ return function(api)
 	local TOOL_COL = { select = T.brand, box = T.brand, delete = T.red, paint = T.violet, pick = TEAL, room = T.green }
 	local railBtns = {}
 	local function railBtn(spec, order, onClick)
-		local b = UI.new("TextButton", { Name = "Tool_" .. spec.id, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(70, 66), BackgroundColor3 = CHIP, LayoutOrder = order, Parent = rail })
+		local b = UI.new("TextButton", { Name = "Tool_" .. spec.id, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(70, 66), BackgroundColor3 = RAIL_CHIP, LayoutOrder = order, Parent = rail })
 		UI.corner(b, 16)
 		local st = UI.stroke(b, 2, Color3.fromRGB(140, 180, 255), 1)
 		local ic = UI.icon(b, spec.icon, 32, { Position = UDim2.new(0.5, 0, 0, 6), AnchorPoint = Vector2.new(0.5, 0) })
-		local lb = txt(b, spec.name, 14, { TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 1, -22), Size = UDim2.new(1, 0, 0, 18), TextColor3 = MUTED })
+		local flat = spec.icon == UI.G.trash -- a white glyph, not a 3D icon: tint it on the white rail
+		if flat then ic.ImageColor3 = T.red end
+		local lb = txt(b, spec.name, 14, { TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 1, -22), Size = UDim2.new(1, 0, 0, 18), TextColor3 = RAIL_TEXT })
 		if spec.key and not (UIS.TouchEnabled and not UIS.KeyboardEnabled) then
 			local k = UI.new("TextLabel", {
 				Text = spec.key, TextSize = 12, FontFace = UI.F.heavy, TextColor3 = WHITE, BackgroundColor3 = Color3.fromRGB(16, 22, 36),
@@ -590,11 +600,11 @@ return function(api)
 		b.MouseEnter:Connect(function()
 			UI.sound("Hover")
 			UI.tween(ic, 0.15, { Rotation = -8 }, Enum.EasingStyle.Back)
-			if not b:GetAttribute("On") then b.BackgroundColor3 = Color3.fromRGB(58, 76, 108) end
+			if not b:GetAttribute("On") then b.BackgroundColor3 = RAIL_HOVER end
 		end)
 		b.MouseLeave:Connect(function()
 			UI.tween(ic, 0.15, { Rotation = 0 })
-			if not b:GetAttribute("On") then b.BackgroundColor3 = CHIP end
+			if not b:GetAttribute("On") then b.BackgroundColor3 = RAIL_CHIP end
 		end)
 		b.Activated:Connect(function()
 			UI.sound("Click")
@@ -605,8 +615,9 @@ return function(api)
 		local r = { b = b, st = st, ic = ic, lb = lb, id = spec.id }
 		function r.set(on, col)
 			b:SetAttribute("On", on or nil)
-			b.BackgroundColor3 = on and (col or T.brand) or CHIP
-			lb.TextColor3 = on and WHITE or MUTED
+			b.BackgroundColor3 = on and (col or T.brand) or RAIL_CHIP
+			lb.TextColor3 = on and WHITE or RAIL_TEXT
+			if flat then ic.ImageColor3 = on and WHITE or T.red end
 			st.Transparency = on and 0 or 1
 		end
 		return r
@@ -614,7 +625,7 @@ return function(api)
 	for i, t in ipairs(TOOLS) do
 		railBtns[t.id] = railBtn(t, i, function() K.setTool(t.id) end)
 	end
-	UI.new("Frame", { Name = "Div", Size = UDim2.fromOffset(52, 2), BackgroundColor3 = Color3.fromRGB(74, 94, 128), BorderSizePixel = 0, LayoutOrder = 20, Parent = rail })
+	UI.new("Frame", { Name = "Div", Size = UDim2.fromOffset(52, 2), BackgroundColor3 = Color3.fromRGB(222, 228, 238), BorderSizePixel = 0, LayoutOrder = 20, Parent = rail })
 	railBtn({ id = "undo", name = "Undo", icon = ICON.rotate, key = "Z", tip = "Undo the last thing you did (Z)" }, 21, function() S.doUndo() end)
 	local viewBtn = railBtn({ id = "view", name = "View", icon = ICON.roof, tip = "Roof, walls and room colours" }, 22, function() K.toggleView() end)
 
