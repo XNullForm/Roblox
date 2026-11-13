@@ -14,7 +14,7 @@ B.GRID = 1
 B.FY = 1
 B.CEIL = 14.6 -- the underside of the ceiling: nothing may poke through it (round 10: walls 14 high)
 B.HEAD = 8 -- anything whose bottom is this high above the floor hangs over the walkways
-B.YAW_STEP = 15 -- the finest turn build mode allows, in degrees
+B.YAW_STEP = 5 -- the finest turn build mode allows, in degrees (round 42: was 15)
 B.SHAPE_APPEAL, B.SHAPE_APPEAL_MAX = 1, 12 -- each shape adds a little appeal, capped per room
 
 B.PLOT_W = 320 -- keep in step with Shared.Street.PLOT_W
@@ -307,6 +307,9 @@ end
 
 -- ok, reason, zone. `ignore` is the placed model being moved (it doesn't block itself).
 function B.validate(itemId, cf, ignore, opts)
+	-- round 42: `ignore` may be a set { [model] = true, main = model } (a group moving together)
+	local group = type(ignore) == "table" and ignore or nil
+	if group then ignore = group.main end
 	local item = Catalog.ITEMS[itemId]
 	B.lastBlocker = nil -- round 28: the placed model that was in the way (build mode outlines it)
 	if not item then return false, "Unknown item" end
@@ -371,7 +374,7 @@ function B.validate(itemId, cf, ignore, opts)
 	for _, p in ipairs(workspace:GetPartBoundsInBox(checkCF, checkSize, params)) do
 		local owner = B.placedOf(p)
 		if owner then
-			if owner ~= ignore then
+			if owner ~= ignore and not (group and group[owner]) then
 				local other = Catalog.ITEMS[owner:GetAttribute("Item")]
 				-- round 14: shapes are free-form decor, but only among themselves (they used to pass through
 				-- furniture). Walls and doors join at their ends, never through each other's middles.

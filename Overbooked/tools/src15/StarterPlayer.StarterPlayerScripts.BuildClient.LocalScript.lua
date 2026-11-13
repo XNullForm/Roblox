@@ -304,99 +304,12 @@ local function hintsFor(set)
 	return set
 end
 
----------------------------------------------------------------- the catalog (left)
--- A tall card down the left edge: search on top, categories on a rail, items in a two-wide grid.
+---------------------------------------------------------------- the shop, tools, selection, placement
+-- round 42: all in Shared.BuildKit, made further down once the ghost and the camera exist
 
-local shopWrap = wrapper("Shop", UDim2.fromOffset(404, 760), UDim2.new(1, -16, 1, -14), Vector2.new(1, 1)) -- round 33: right side
-shopWrap.Visible = false
-local shopHolder, shopBody = UI.panel(shopWrap, UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5), {
-	name = "Catalog", radius = 14, title = "Catalog", subtitle = "Pick something, then click the floor", icon = ICON.hammer,
-})
-shopHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-
-local refreshCards -- forward
-local cashText
-do
-	local pill = UI.new("Frame", {
-		Name = "Cash", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), Position = UDim2.new(1, -16, 0, 16),
-		AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Color3.fromRGB(228, 250, 236), ZIndex = 5, Parent = shopBody,
-	})
-	UI.corner(pill, 15)
-	UI.pad(pill, 12, 0, 12, 0)
-	cashText = UI.new("TextLabel", {
-		Text = "$0", TextSize = 16, FontFace = UI.F.heavy, TextColor3 = T.greenDk, AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.new(0, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 6, Parent = pill,
-	})
-end
-
-local searchBox = UI.new("Frame", { Name = "Search", Size = UDim2.new(1, -32, 0, 38), Position = UDim2.fromOffset(16, 68), BackgroundColor3 = T.ink2, Parent = shopBody })
-UI.corner(searchBox, 10)
-local searchStroke = UI.stroke(searchBox, 1.5, T.line, 0)
-UI.icon(searchBox, ICON.search, 20, { Position = UDim2.new(0, 10, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5) })
-local searchInput = UI.new("TextBox", {
-	Text = "", PlaceholderText = "Search items", PlaceholderColor3 = T.muted, TextSize = 15, FontFace = UI.F.bold,
-	TextColor3 = T.cream, BackgroundTransparency = 1, ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left,
-	Size = UDim2.new(1, -46, 1, 0), Position = UDim2.fromOffset(38, 0), Parent = searchBox,
-})
-searchInput.Focused:Connect(function() UI.tween(searchStroke, 0.15, { Color = T.brand }) end)
-searchInput.FocusLost:Connect(function() UI.tween(searchStroke, 0.15, { Color = T.line }) end)
-
--- the category rail
-local catRail = UI.new("ScrollingFrame", {
-	Name = "Cats", Position = UDim2.fromOffset(10, 116), Size = UDim2.new(0, 64, 1, -126), BackgroundTransparency = 1,
-	ScrollBarThickness = 0, AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), Parent = shopBody,
-})
-UI.list(catRail, nil, 4)
-local catBtns = {}
-local tabsApi = {}
-function tabsApi.select(id, silent)
-	if not catBtns[id] then id = "all" end
-	for cid, cb in pairs(catBtns) do
-		local on = cid == id
-		cb.b.BackgroundColor3 = on and T.brandSoft or T.ink
-		cb.b.BackgroundTransparency = on and 0 or 1
-		cb.t.TextColor3 = on and T.brand or T.muted
-	end
-	if not silent then
-		S.cat = id
-		refreshCards(true)
-	end
-end
-for i, c in ipairs(Catalog.CATS) do
-	local b = UI.new("TextButton", { Name = "Cat_" .. c.id, Text = "", AutoButtonColor = false, Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = T.ink, BackgroundTransparency = 1, LayoutOrder = i, Parent = catRail })
-	UI.corner(b, 12)
-	UI.icon(b, ICON[c.icon], 26, { Position = UDim2.new(0.5, 0, 0, 7), AnchorPoint = Vector2.new(0.5, 0) })
-	local t = UI.label(b, c.name, 10, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 1, -19), Size = UDim2.new(1, 0, 0, 14), TextTruncate = Enum.TextTruncate.AtEnd })
-	b.MouseEnter:Connect(function() if S.cat ~= c.id then b.BackgroundTransparency = 0 b.BackgroundColor3 = T.ink2 end end)
-	b.MouseLeave:Connect(function() if S.cat ~= c.id then b.BackgroundTransparency = 1 end end)
-	b.Activated:Connect(function()
-		UI.sound("Tab")
-		tabsApi.select(c.id)
-	end)
-	catBtns[c.id] = { b = b, t = t }
-end
-searchInput:GetPropertyChangedSignal("Text"):Connect(function()
-	S.query = string.lower(searchInput.Text)
-	if S.query ~= "" and S.cat ~= "all" then tabsApi.select("all", true) S.cat = "all" end
-	refreshCards(true)
-end)
-
-local list = UI.new("ScrollingFrame", {
-	Name = "Items", BackgroundTransparency = 1, Position = UDim2.fromOffset(80, 116), Size = UDim2.new(1, -90, 1, -126),
-	ScrollingDirection = Enum.ScrollingDirection.Y, AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(),
-	ScrollBarThickness = 4, ScrollBarImageColor3 = T.muted, ScrollBarImageTransparency = 0.4, Parent = shopBody,
-})
-do
-	local g = Instance.new("UIGridLayout")
-	g.CellSize = UDim2.new(0.5, -8, 0, 158)
-	g.CellPadding = UDim2.fromOffset(8, 8)
-	g.SortOrder = Enum.SortOrder.LayoutOrder
-	g.Parent = list
-	UI.pad(list, 2, 2, 8, 8)
-end
-local emptyNote = UI.label(shopBody, "Nothing matches that search", 15, {
-	FontFace = UI.F.bold, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(80, 190), Size = UDim2.new(1, -90, 0, 20), Visible = false,
-})
+local Kit -- the BuildKit (set up before enter / leave)
+local function refreshCards(arrive) if Kit then Kit.refreshCards(arrive) end end
+local startPlacing, buyRoom -- forward
 
 -- a 3D thumbnail of an item
 local function thumb(parent, id)
@@ -419,321 +332,12 @@ local function thumb(parent, id)
 	return vf
 end
 
-local cards = {}
-local startPlacing -- forward
-
--- thumbnails are made a few a frame, and only for tiles that have been on show (the catalog opens at once)
-local thumbQueue, thumbBusy = {}, false
-local function wantThumb(c)
-	if c.vf or c.queued then return end
-	c.queued = true
-	table.insert(thumbQueue, c)
-	if thumbBusy then return end
-	thumbBusy = true
-	task.spawn(function()
-		while #thumbQueue > 0 do
-			for _ = 1, 4 do
-				local q = table.remove(thumbQueue, 1)
-				if not q then break end
-				local ok, vf = pcall(thumb, q.well, q.id)
-				if ok then
-					vf.Size = UDim2.fromScale(1, 1)
-					vf.ZIndex = 2
-					q.vf = vf
-				end
-			end
-			task.wait()
-		end
-		thumbBusy = false
-	end)
-end
-
-local function makeCard(id, order)
-	local item = Catalog.ITEMS[id]
-	local b = UI.new("TextButton", { Name = id, Text = "", AutoButtonColor = false, BackgroundColor3 = T.ink2, LayoutOrder = order, Parent = list })
-	UI.corner(b, 14)
-	local st = UI.stroke(b, 2, T.brand, 1)
-	local well = UI.new("Frame", { Name = "Well", Size = UDim2.new(1, -12, 1, -62), Position = UDim2.fromOffset(6, 6), BackgroundColor3 = T.white, ClipsDescendants = true, Parent = b })
-	UI.corner(well, 10)
-	UI.label(b, item.name, 14, { FontFace = UI.F.bold, Position = UDim2.new(0, 10, 1, -52), Size = UDim2.new(1, -20, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd })
-	local price = UI.label(b, "", 15, { FontFace = UI.F.heavy, TextColor3 = T.greenDk, Position = UDim2.new(0, 10, 1, -30), Size = UDim2.new(0.6, 0, 0, 20) })
-	local appeal = item.shape and Build.SHAPE_APPEAL or item.appeal or 0
-	if appeal > 0 then
-		UI.icon(b, UI.G.star, 12, { ImageColor3 = T.muted, Position = UDim2.new(1, -36, 1, -20), AnchorPoint = Vector2.new(1, 0.5) })
-		UI.label(b, "+" .. appeal, 12, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -10, 1, -29), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(24, 18) })
-	end
-	local tagText = item.wall and "WALL" or item.room and "ROOMS" or item.shape and "CUSTOM" or (item.coreKind and "UPGRADE") or nil
-	if tagText then
-		local tag = UI.new("TextLabel", {
-			Text = tagText, TextSize = 10, FontFace = UI.F.heavy, TextColor3 = T.muted, BackgroundColor3 = T.ink2,
-			AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 16), Position = UDim2.fromOffset(6, 6), ZIndex = 3, Parent = well,
-		})
-		UI.corner(tag, 5)
-		UI.pad(tag, 5, 0, 5, 0)
-	end
-	-- a level or research lock
-	local lockF = UI.new("Frame", { Name = "Lock", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.white, BackgroundTransparency = 0.2, ZIndex = 4, Visible = false, Parent = well })
-	UI.icon(lockF, UI.G.lock, 22, { ImageColor3 = T.muted, Position = UDim2.fromScale(0.5, 0.36), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 5 })
-	local lockName = UI.label(lockF, "", 11, {
-		FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true,
-		Position = UDim2.new(0, 4, 0.5, 2), Size = UDim2.new(1, -8, 0.5, -4), TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 5,
-	})
-	local function lockText()
-		if lockOf(id) == "level" then
-			lockName.Text = "Hotel level " .. Levels.itemLevel(id)
-		elseif item.research then
-			lockName.Text = "Research: " .. Research.BY_ID[item.research].name
-		end
-	end
-	lockText()
-	local hover = false
-	b.MouseEnter:Connect(function()
-		hover = true
-		b.BackgroundColor3 = T.ink3
-		st.Transparency = 0.4
-		UI.sound("Hover")
-	end)
-	b.MouseLeave:Connect(function()
-		hover = false
-		b.BackgroundColor3 = T.ink2
-		local c = cards[id]
-		st.Transparency = c and c.sel and 0 or 1
-	end)
-	b.Activated:Connect(function()
-		local lock = lockOf(id)
-		if lock == "level" then
-			UI.shake(b)
-			toast("The " .. string.lower(item.name) .. " unlocks at hotel level " .. Levels.itemLevel(id), "star", true)
-			return
-		elseif lock then
-			UI.shake(b)
-			toast("Unlock the " .. string.lower(item.name) .. " in Research: " .. Research.BY_ID[item.research].name, "research", true)
-			player:SetAttribute("OpenResearch", item.research)
-			return
-		end
-		if cash() < itemPrice(id, item.shape and S.shape) then
-			UI.shake(b)
-			toast("Not enough cash for the " .. string.lower(item.name), "cash", true)
-			return
-		end
-		UI.sound("Click")
-		startPlacing(id)
-	end)
-	cards[id] = { id = id, button = b, card = b, well = well, stroke = st, price = price, lock = lockF, lockText = lockText, hover = function() return hover end, order = order }
-end
-
-for i, id in ipairs(Catalog.ORDER) do
-	local item = Catalog.ITEMS[id]
-	if item and (item.shape or ITEMS:FindFirstChild(id)) and item.cat then
-		makeCard(id, i)
-	end
-end
-
--- more land: the first tile in All, Rooms and Structure (click twice to buy)
-local buyRoom -- forward
-local room = { armed = 0 }
-do
-	local b = UI.new("TextButton", { Name = "RoomCard", Text = "", AutoButtonColor = false, BackgroundColor3 = T.brandSoft, LayoutOrder = -100, Parent = list })
-	UI.corner(b, 14)
-	UI.stroke(b, 2, T.brand, 0.5)
-	UI.icon(b, UI.G.plus, 40, { ImageColor3 = T.brand, Position = UDim2.new(0.5, 0, 0, 26), AnchorPoint = Vector2.new(0.5, 0) })
-	local note = UI.label(b, "+26 x 60 studs", 11, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 0, 74), Size = UDim2.new(1, 0, 0, 14) })
-	local title = UI.label(b, "More land", 14, { FontFace = UI.F.bold, Position = UDim2.new(0, 10, 1, -52), Size = UDim2.new(1, -20, 0, 18) })
-	local price = UI.label(b, "$400", 15, { FontFace = UI.F.heavy, TextColor3 = T.greenDk, Position = UDim2.new(0, 10, 1, -30), Size = UDim2.new(1, -20, 0, 20) })
-	room.button, room.card, room.title, room.price, room.note = b, b, title, price, note
-	b.MouseEnter:Connect(function() UI.sound("Hover") end)
-	b.Activated:Connect(function()
-		local id = HOTEL:GetAttribute("NextRoom")
-		if not id then return end
-		if Levels.of(HOTEL) < Levels.roomLevel(id) then
-			UI.shake(b)
-			toast("More land unlocks at hotel level " .. Levels.roomLevel(id), "star", true)
-			return
-		end
-		if cash() < (HOTEL:GetAttribute("NextRoomPrice") or 0) then
-			UI.shake(b)
-			toast("Not enough cash for more land", "cash", true)
-			return
-		end
-		if os.clock() - room.armed > 4 then
-			room.armed = os.clock()
-			UI.sound("Click")
-			room.refresh()
-			task.delay(4.1, room.refresh)
-			return
-		end
-		room.armed = 0
-		buyRoom(id)
-		room.refresh()
-	end)
-end
-
-function room.refresh()
-	local id = HOTEL:GetAttribute("NextRoom")
-	local price = HOTEL:GetAttribute("NextRoomPrice") or 0
-	room.button.Visible = id ~= nil and S.query == "" and (S.cat == "all" or S.cat == "rooms" or S.cat == "structure")
-	if not id then return end
-	local armed = os.clock() - room.armed < 4
-	local need = Levels.roomLevel(id)
-	local locked = Levels.of(HOTEL) < need
-	room.title.Text = armed and "Click again to buy" or "More land"
-	room.price.Text = locked and ("Hotel level " .. need) or ("$" .. commas(price))
-	room.price.TextColor3 = locked and T.muted or (cash() >= price and T.greenDk or T.red)
-	room.button.BackgroundColor3 = armed and Color3.fromRGB(228, 250, 236) or T.brandSoft
-end
-HOTEL:GetAttributeChangedSignal("NextRoom"):Connect(room.refresh)
-
-refreshCards = function(arrive)
-	local money = cash()
-	local shown = 0
-	for id, c in pairs(cards) do
-		local item = Catalog.ITEMS[id]
-		local vis = (S.cat == "all" or item.cat == S.cat)
-		if S.query ~= "" then vis = string.find(string.lower(item.name), S.query, 1, true) ~= nil end
-		c.button.Visible = vis
-		if vis then
-			shown += 1
-			if S.building then wantThumb(c) end
-		end
-		local p = itemPrice(id, item.shape and S.shape)
-		c.price.Text = "$" .. commas(p)
-		local open = unlocked(id)
-		-- what you can use comes first, locked items after (catalogue order inside each group)
-		c.button.LayoutOrder = (open and 0 or 1000) + (c.order or 0)
-		c.lock.Visible = not open
-		if not open then c.lockText() end
-		c.price.TextColor3 = money >= p and T.greenDk or T.red
-		c.sel = ghost and not ghost.moving and ghost.id == id
-		if not c.hover() then c.stroke.Transparency = c.sel and 0 or 1 end
-	end
-	room.refresh()
-	emptyNote.Visible = shown == 0
-	if arrive then list.CanvasPosition = Vector2.zero end
-end
-
-local function refreshCash()
-	if cash() == math.huge then -- the /mmoney command
-		cashText.Text = "Infinite"
-	else
-		UI.countTo(cashText, cash(), function(v) return "$" .. commas(v) end, 0.45)
-	end
-	refreshCards()
-end
-player:GetAttributeChangedSignal("Cash"):Connect(refreshCash)
-HOTEL:GetAttributeChangedSignal("Research"):Connect(function() refreshCards() end)
-HOTEL:GetAttributeChangedSignal("Level"):Connect(function() refreshCards() end)
-tabsApi.select("all", true)
-refreshCash()
-
----------------------------------------------------------------- the tool bar (bottom)
--- One dark bar: the Room Builder, then a chip per setting (click to step through its choices), then Undo.
-
--- round 41: remade: a taller glass tray with a soft top light; each chip says what it is on top and shows its
--- setting in a pill below (green when on); the hotel's floors and roof are picked here too
-local toolWrap = wrapper("Tools", UDim2.fromOffset(1400, 76), UDim2.new(0.5, 0, 1, -14), Vector2.new(0.5, 1))
-toolWrap.Visible = false
-local toolHolder = UI.new("Frame", {
-	Name = "Bar", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 72), Position = UDim2.fromScale(0.5, 0.5),
-	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.04, Parent = toolWrap,
-})
-UI.corner(toolHolder, 20)
-UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(UI.shade(T.hud, 0.12), T.hud), Parent = toolHolder })
-UI.stroke(toolHolder, 1.5, T.hudLine, 0.1)
-S.toolFit = UI.new("UIScale", { Parent = toolHolder }) -- shrinks the bar to the room left beside the catalog (layout)
-UI.pad(toolHolder, 8, 0, 8, 0)
-UI.list(toolHolder, Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
-S.rbRailBtn = UI.button(toolHolder, {
-	name = "RoomBuilder", text = "Room Builder", icon = ICON.roomReady, iconSize = 24, kind = "gold", key = "F",
-	size = UDim2.fromOffset(168, 54), textSize = 16, radius = 12, order = 1,
-	onClick = function() if S.toggleRoom then S.toggleRoom() end end,
-})
-UI.new("Frame", { Name = "Div", Size = UDim2.fromOffset(1, 28), BackgroundColor3 = T.hudLine, BorderSizePixel = 0, LayoutOrder = 2, Parent = toolHolder })
--- options = { { value, text }, ... }; a click moves on to the next one
-local function toolChip(label, options, current, order, tip, cb)
-	local w = #label * 8 + 16
-	for _, o in ipairs(options) do w = math.max(w, #o[2] * 9 + 24) end
-	w = math.clamp(w, 72, 124)
-	local b = UI.new("TextButton", { Name = "Chip_" .. label, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(w, 58), BackgroundColor3 = T.hud2, LayoutOrder = order, Parent = toolHolder })
-	UI.corner(b, 14)
-	local bRim = UI.stroke(b, 1.5, T.hudLine, 0)
-	UI.label(b, label, 12, { FontFace = UI.F.heavy, TextColor3 = T.hudMuted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 16) })
-	local pill = UI.new("Frame", { Size = UDim2.new(1, -12, 0, 26), Position = UDim2.new(0.5, 0, 1, -6), AnchorPoint = Vector2.new(0.5, 1), BackgroundColor3 = T.hud, Parent = b })
-	UI.corner(pill, 9)
-	local v = UI.label(pill, "", 16, { FontFace = UI.F.heavy, TextColor3 = T.hudText, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), TextTruncate = Enum.TextTruncate.AtEnd })
-	local idx = 1
-	for i, o in ipairs(options) do if o[1] == current then idx = i end end
-	local function show()
-		local o = options[idx]
-		local off = o[1] == false or o[1] == 0
-		v.Text = o[2]
-		v.TextColor3 = off and T.hudMuted or Color3.new(1, 1, 1)
-		pill.BackgroundColor3 = o[1] == true and T.greenDk or T.hud
-	end
-	show()
-	b.MouseEnter:Connect(function()
-		UI.tween(b, 0.12, { BackgroundColor3 = T.hudLine })
-		bRim.Color = T.brand
-		UI.sound("Hover")
-	end)
-	b.MouseLeave:Connect(function()
-		UI.tween(b, 0.15, { BackgroundColor3 = T.hud2 })
-		bRim.Color = T.hudLine
-	end)
-	b.Activated:Connect(function()
-		idx = idx % #options + 1
-		show()
-		UI.pop(pill, 0.85, 0.2)
-		UI.sound("Tick")
-		cb(options[idx][1])
-	end)
-	if tip then UI.tooltip(b, tip) end
-	return function(value)
-		for i, o in ipairs(options) do if o[1] == value then idx = i end end
-		show()
-	end
-end
-local ONOFF = { { true, "On" }, { false, "Off" } }
-toolChip("GRID", { { 0, "Off" }, { 0.5, "0.5" }, { 1, "1" }, { 2, "2" }, { 4, "4" } }, S.grid, 3, "How far things snap, in studs", function(v) S.grid = v end)
-toolChip("TURN", { { 90, "90" }, { 45, "45" }, { 15, "15" } }, S.yawStep, 4, "How far R turns something, in degrees", function(v) S.yawStep = v end)
-toolChip("ROOF", { { "auto", "Auto" }, { "show", "Show" }, { "hide", "Hide" } }, S.roof, 5, "Show or hide the roof while you build", function(v)
-	S.roof = v
-	player:SetAttribute("RoofMode", v)
-end)
 S.walls = "cut" -- round 28: the walls between you and what you look at go see-through
-toolChip("WALLS", { { "cut", "Cut" }, { "full", "Full" } }, S.walls, 5, "See through the walls nearest the camera", function(v) S.walls = v end)
-S.setZones = toolChip("ZONES", ONOFF, S.zones, 6, "Colour each room's floor", function(on)
-	S.zones = on
-	S.applyZones()
-end)
 S.wallSnap = true
 S.keep = false
-toolChip("WALL SNAP", ONOFF, true, 7, "Walls and new rooms lock onto the walls already there", function(on) S.wallSnap = on end)
-toolChip("KEEP PLACING", ONOFF, false, 8, "Keep the item in hand after you place it", function(on) S.keep = on end)
--- round 41: the hotel's floors and roof are picked here now (they left the Upgrades page). Floor tiles to lay by
--- hand are in the catalog (Structure).
-do
-	local Up = require(Shared:WaitForChild("Upgrades"))
-	local upRemote = Shared.Remotes:WaitForChild("Upgrade")
-	local function short(name) return (name:gsub(" planks", ""):gsub(" tile", ""):gsub("Checker ", ""):gsub("Green ", "")) end
-	for k, g in ipairs({ { "LOBBY FLOOR", "lobby", 1 }, { "ROOM FLOORS", "rooms", 2 }, { "ROOF STYLE", "roof", 4 } }) do
-		local opts = {}
-		for _, e in ipairs(Up.STYLES[g[3]].list) do table.insert(opts, { e[1], short(e[2]) }) end
-		local set
-		set = toolChip(g[1], opts, Up.style(HOTEL)[g[2]], 9 + k, "Free. Click to change", function(v)
-			task.spawn(function()
-				local ok, why = upRemote:InvokeServer("style", g[2], v)
-				if not ok then toast(why or "Can't change that", nil, true) end
-				set(Up.style(HOTEL)[g[2]])
-			end)
-		end)
-	end
-end
-UI.new("Frame", { Name = "Div2", Size = UDim2.fromOffset(1, 28), BackgroundColor3 = T.hudLine, BorderSizePixel = 0, LayoutOrder = 13, Parent = toolHolder })
+S.stack = true -- round 42: Placement panel switches (BuildKit)
+S.hug = false
 S.undo = {} -- uids you placed, newest last
-UI.button(toolHolder, {
-	name = "Undo", text = "Undo", icon = ICON.rotate, iconSize = 18, kind = "ink", textSize = 15, key = "Z",
-	size = UDim2.fromOffset(116, 54), radius = 12, order = 14, onClick = function() S.doUndo() end,
-})
 
 ---------------------------------------------------------------- place bar (over the tool bar, while something is in hand)
 
@@ -848,57 +452,24 @@ do
 end
 ED.price = UI.label(edContent, "", 16, { FontFace = UI.F.black, TextColor3 = T.green, LayoutOrder = 10, Size = UDim2.new(1, 0, 0, 22) })
 
----------------------------------------------------------------- selection pill (floats over the item)
-
-local cardWrap = wrapper("ItemCard", UDim2.fromOffset(540, 104), UDim2.new(), Vector2.new(0.5, 1))
-cardWrap.Visible = false
-local cardHolder = UI.new("Frame", {
-	Name = "Card", Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
-	BackgroundColor3 = T.hud, BackgroundTransparency = 0.06, Parent = cardWrap,
-})
-UI.corner(cardHolder, 18)
-UI.stroke(cardHolder, 1, T.hudLine, 0.2)
-local cardBody = cardHolder
-local cardTitle = UI.label(cardBody, "", 16, { FontFace = UI.F.heavy, TextColor3 = T.hudText, Position = UDim2.fromOffset(18, 11), Size = UDim2.new(0.45, -18, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd })
-local cardSub = UI.label(cardBody, "", 12, { FontFace = UI.F.bold, TextColor3 = T.hudMuted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(0.45, 0, 0, 12), Size = UDim2.new(0.55, -18, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd })
-local cardRow = UI.new("Frame", { Size = UDim2.new(1, -20, 0, 46), Position = UDim2.fromOffset(10, 46), BackgroundTransparency = 1, Parent = cardBody })
-UI.list(cardRow, Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
-local cardBtns = {}
-local cardActions = {} -- forward table of functions
-local function cardBtn(key, text, iconKey, kind, order, hotkey)
-	local b = UI.button(cardRow, {
-		name = key, text = text, icon = ICON[iconKey], kind = kind, key = hotkey, textSize = 15, iconSize = 20,
-		size = UDim2.fromOffset(text and 92 or 46, 42), order = order, radius = 12,
-		onClick = function() cardActions[key]() end,
-	})
-	cardBtns[key] = b
-	return b
-end
-cardBtn("move", "Move", "move", "gold", 1, "M")
-cardBtn("turn", "Turn", "rotate", "ink", 2, "R")
-cardBtn("copy", "Copy", "copy", "ink", 3, "C")
-cardBtn("paint", "Paint", "paint", "ink", 4)
-cardBtn("sell", "Sell", "sell", "green", 5)
-cardBtn("close", nil, "close", "ink", 6)
-
 ---------------------------------------------------------------- layout
 
 local function layout()
+	if not Kit then return end
 	local vp = camera.ViewportSize
+	local shopWrap = Kit.shopWrap
 	local k = kOf(shopWrap)
-	-- round 33: the catalog runs down the right edge, under the build button
-	shopWrap.Size = UDim2.fromOffset(404, math.clamp((vp.Y - 150) / k, 380, 900))
+	-- round 33: the shop runs down the right edge, under the build button; round 42: the tool rail down the left
+	shopWrap.Size = UDim2.fromOffset(Kit.SHOP_W, math.clamp((vp.Y - 150) / k, 380, 900))
 	shopWrap.Position = UDim2.new(1, -16, 1, -14)
-	-- the bars sit in the middle of what's left
-	local right = 32 + 404 * k
-	local cx = 16 + math.max(vp.X - right - 16, 300) / 2
-	toolWrap.Position = UDim2.new(0, cx, 1, -14)
-	if S.toolFit and toolHolder.AbsoluteSize.X > 0 then
-		local need = toolHolder.AbsoluteSize.X / S.toolFit.Scale
-		local fit = math.clamp((vp.X - right - 32) / need, 0.5, 1)
-		if math.abs(fit - S.toolFit.Scale) > 0.01 then S.toolFit.Scale = fit end
-	end
-	barWrap.Position = UDim2.new(0, cx, 1, -14 - 84 * kOf(toolWrap))
+	local right = 32 + Kit.SHOP_W * k
+	local left = Kit.leftEdge()
+	-- the bars sit in the middle of what's left; the block editor sits beside the shop
+	local cx = left + math.max(vp.X - right - left, 300) / 2
+	barWrap.Position = UDim2.new(0, cx, 1, -14)
+	edWrap.AnchorPoint = Vector2.new(1, 0)
+	edWrap.Position = UDim2.new(1, -(right - 8), 0, 140)
+	Kit.layout(vp, right, cx, -14)
 	if S.building then
 		btnWrap.AnchorPoint = Vector2.new(1, 0)
 		btnWrap.Position = UDim2.new(1, -18, 0, 12)
@@ -915,7 +486,6 @@ local function layout()
 	if div then div.Visible = not S.building and not UI.locked("build") end
 end
 camera:GetPropertyChangedSignal("ViewportSize"):Connect(function() task.defer(layout) end)
-toolHolder:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() task.defer(layout) end)
 
 ---------------------------------------------------------------- zone overlays + room labels (local only)
 
@@ -1187,13 +757,13 @@ local function aimHit(pos)
 	return nil
 end
 
-local blockers = { btnWrap, shopWrap, toolWrap, barWrap, edWrap, cardWrap }
+local blockers = { btnWrap, barWrap, edWrap } -- + BuildKit's (below)
 local function overGui(pos)
 	pos = pos or padAim() or UIS:GetMouseLocation()
 	local inset = GuiService:GetGuiInset()
 	for _, o in ipairs(pgui:GetGuiObjectsAtPosition(pos.X, pos.Y - inset.Y)) do
 		for _, root in ipairs(blockers) do
-			if root.Visible and o:IsDescendantOf(root) then return true end
+			if root.Visible and o ~= root and o:IsDescendantOf(root) then return true end
 		end
 	end
 	return false
@@ -1204,10 +774,6 @@ end
 local hoverHL = UI.new("Highlight", {
 	Name = "Hover", FillTransparency = 0.88, FillColor = Color3.new(1, 1, 1), OutlineColor = T.cream,
 	DepthMode = Enum.HighlightDepthMode.Occluded, Enabled = false, Parent = pgui,
-})
-local selHL = UI.new("Highlight", {
-	Name = "Selected", FillTransparency = 0.78, FillColor = T.gold, OutlineColor = T.gold,
-	DepthMode = Enum.HighlightDepthMode.AlwaysOnTop, Enabled = false, Parent = pgui,
 })
 
 local function setLocalHidden(model, on)
@@ -1309,70 +875,7 @@ function ED.close()
 	end
 end
 
----------------------------------------------------------------- the item card
-
-local cardWorld = Vector3.zero
-
-local function placeCard()
-	local v, onScreen = camera:WorldToViewportPoint(cardWorld)
-	local vp = camera.ViewportSize
-	local k = kOf(cardWrap)
-	local w, h = 540 * k, 104 * k
-	local x = math.clamp(v.X, w / 2 + 10, vp.X - w / 2 - 10)
-	local y = math.clamp(v.Y - 10, h + 70, vp.Y - 160 * k)
-	cardWrap.Position = UDim2.fromOffset(x, y)
-	cardWrap.Visible = onScreen or v.Z > 0
-end
-
-local function closeCard()
-	if selected and ED.mode == "target" then ED.close() end
-	selected = nil
-	S.sellArmed = false
-	selHL.Enabled = false
-	if cardWrap.Visible then
-		UI.close(cardHolder, function()
-			if not selected then cardWrap.Visible = false end
-		end)
-	end
-end
-
-local function setSellButton(armed, text, kind)
-	cardBtns.sell.Row.Label.Text = text
-	UI.setKind(cardBtns.sell, kind)
-	if armed then UI.pop(cardBtns.sell, 1.15) end
-end
-
-local function openCard(m)
-	if selected ~= m then UI.sound("Select") end
-	local isDesk = m == deskModel
-	local id = isDesk and "Desk" or m:GetAttribute("Item")
-	local item = Catalog.ITEMS[id]
-	selected = m
-	S.sellArmed = false
-	cardTitle.Text = isDesk and "Reception Desk" or (item and item.name or id)
-	local isCore = not isDesk and m:GetAttribute("Core") ~= nil
-	local zone = not isDesk and m:GetAttribute("Zone") or "Lobby"
-	local where = zone == "Lobby" and "In the lobby" or ("In room " .. string.gsub(zone, "Room", ""))
-	cardSub.Text = isDesk and "Part of the hotel: move or turn it" or (where .. ((item and item.appeal and item.appeal > 0) and ("   +" .. item.appeal .. " appeal") or ""))
-	cardBtns.copy.Visible = not isDesk and not isCore and item ~= nil and not item.core
-	cardBtns.paint.Visible = item ~= nil and item.shape ~= nil
-	cardBtns.sell.Visible = true
-	if isDesk then
-		setSellButton(false, "Built in", "ghost")
-	elseif isCore then
-		setSellButton(false, "Needed", "ghost")
-	else
-		setSellButton(false, "$" .. commas(Catalog.sellValue(id, m:GetAttribute("Size"))), "green")
-	end
-	local cf, size = m:GetBoundingBox()
-	cardWorld = cf.Position + Vector3.new(0, size.Y / 2 + 1.5, 0)
-	placeCard()
-	cardWrap.Visible = true
-	UI.open(cardHolder, { rise = 12, from = 0.8 })
-	selHL.Adornee = m
-	selHL.Enabled = true
-	if item and item.shape then ED.open("target", m) elseif ED.mode == "target" then ED.close() end
-end
+local function closeCard() if Kit then Kit.clear() end end
 
 ---------------------------------------------------------------- ghost
 
@@ -1458,6 +961,7 @@ local function makeGhost(id, moving)
 	clearGhost()
 	closeCard()
 	local start = moving and moving:GetPivot() or nil
+	S.lockSpot = false
 	ghost = {
 		id = id, moving = moving, yaw = start and Build.yawOf(start) or keepYaw or 0, dy = 0,
 		target = start, shown = start, ok = false, spin = 0, wall = false,
@@ -1578,7 +1082,7 @@ local function snapStructure(id, cf)
 end
 
 local function aimGhost(pos)
-	if not ghost then return end
+	if not ghost or ghost.locked then return end
 	local item = Catalog.ITEMS[ghost.id]
 	local floorOnly = Build.floorOnly(ghost.id) or ghost.moving == deskModel
 	local hit = not floorOnly and aimHit(pos) or nil
@@ -1599,7 +1103,7 @@ local function aimGhost(pos)
 		ghost.wall = true
 	else
 		local base, point = 0, nil
-		if hit and hit.Normal.Y > 0.7 and Build.placedOf(hit.Instance) then
+		if S.stack ~= false and hit and hit.Normal.Y > 0.7 and Build.placedOf(hit.Instance) then
 			-- stack onto the top of the thing under the cursor
 			base = hit.Position.Y - Build.FY
 			point = hit.Position
@@ -1614,6 +1118,9 @@ local function aimGhost(pos)
 			local raw = Build.pivot(point.X, y, point.Z, ghost.yaw)
 			local snapped = snapStructure(ghost.id, raw)
 			if snapped ~= raw then cf = snapped end
+		end
+		if S.hug and S.hugWall and item and not item.structure and not item.shape and not item.flat and not floorOnly then
+			cf = S.hugWall(ghost.id, cf)
 		end
 	end
 	if not ghost.target or (cf.Position - ghost.target.Position).Magnitude > 0.01 or not cf.Rotation:FuzzyEq(ghost.target.Rotation, 1e-3) then
@@ -1738,6 +1245,7 @@ commit = function()
 		landFX(m, cf)
 	else
 		local new = findUid(res)
+		if Kit then Kit.placed(g.id) end
 		table.insert(S.undo, { uid = res, t = os.clock() })
 		if #S.undo > 20 then table.remove(S.undo, 1) end
 		local it = Catalog.ITEMS[g.id]
@@ -2572,9 +2080,9 @@ do
 		holder.Position = UDim2.new(0.5, 380, 0.5, 0)
 		UI.tween(holder, 0.45, { Position = UDim2.fromScale(0.5, 0.5) }, Enum.EasingStyle.Quint)
 		UI.stagger(content, 0.025)
-		UI.tween(shopHolder, 0.3, { Position = UDim2.new(0.5, -460, 0.5, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		task.delay(0.3, function() if S.roomMode then shopWrap.Visible = false end end)
-		if S.rbRailBtn then UI.setKind(S.rbRailBtn, "green") end
+		UI.tween(Kit.shopHolder, 0.3, { Position = UDim2.new(0.5, 460, 0.5, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(0.3, function() if S.roomMode then Kit.shopWrap.Visible = false end end)
+		if S.toolsRefresh then S.toolsRefresh() end
 		UI.sound("Open")
 	end
 	function S.closeBuilder()
@@ -2585,123 +2093,56 @@ do
 			if not S.roomMode then wrap.Visible = false end
 		end)
 		if S.building then
-			shopWrap.Visible = true
-			shopHolder.Position = UDim2.new(0.5, -460, 0.5, 0)
-			UI.tween(shopHolder, 0.5, { Position = UDim2.fromScale(0.5, 0.5) }, Enum.EasingStyle.Quint)
+			Kit.shopWrap.Visible = true
+			Kit.shopHolder.Position = UDim2.new(0.5, 460, 0.5, 0)
+			UI.tween(Kit.shopHolder, 0.5, { Position = UDim2.fromScale(0.5, 0.5) }, Enum.EasingStyle.Quint)
 		end
-		if S.rbRailBtn then UI.setKind(S.rbRailBtn, "gold") end
+		if S.toolsRefresh then S.toolsRefresh() end
+		if Kit then Kit.applyHints() end
 		setHints(hintsFor(ghost and HINTS_GHOST or HINTS_IDLE))
 		UI.sound("Close")
 	end
 	player:GetAttributeChangedSignal("Cash"):Connect(function() if S.roomMode then S.rbRefresh() end end)
 end
 
----------------------------------------------------------------- card actions
-
-local function selectedYaw() return selected and yawOfModel(selected) or 0 end
-
-function cardActions.move()
-	local m = selected
-	if not m then return end
-	if m == deskModel then makeGhost("Desk", m) return end
-	local r = m:GetAttribute("Room") and HOTEL.Rooms:FindFirstChild(m:GetAttribute("Room"))
-	if r and r:GetAttribute("State") == "Booked" then
-		toast("A guest is using this room", "guest", true)
-		return
-	end
-	makeGhost(m:GetAttribute("Item"), m)
-end
-
-function cardActions.turn()
-	local m = selected
-	if not m or S.busy then return end
-	S.busy = true
-	local from = m:GetPivot()
-	local p = from.Position
-	local cf = Build.pivot(p.X, p.Y - Build.FY, p.Z, (selectedYaw() + S.yawStep) % 360)
-	local ok, why
-	if m == deskModel then
-		ok, why = Remote:InvokeServer("desk", cf)
-	else
-		ok, why = Remote:InvokeServer("move", m:GetAttribute("Uid"), cf)
-	end
-	S.busy = false
-	if ok then
-		table.insert(S.undo, { move = (m ~= deskModel and m:GetAttribute("Uid")) or "desk", cf = from, t = os.clock() })
-		if #S.undo > 20 then table.remove(S.undo, 1) end
-		local v = Instance.new("CFrameValue")
-		v.Value = from
-		v.Changed:Connect(function(c) if m.Parent then m:PivotTo(c) end end)
-		local tw = UI.tween(v, 0.38, { Value = cf }, Enum.EasingStyle.Back)
-		tw.Completed:Connect(function() v:Destroy() end)
-		UI.sound("Turn")
-	else
-		toast(why or "No room to turn it", "close", true)
-	end
-end
-
-function cardActions.copy()
-	local m = selected
-	if not m or m == deskModel then return end
-	local id = m:GetAttribute("Item")
-	if not unlocked(id) then toast("Research it first", "research", true) return end
-	local yaw = yawOfModel(m)
-	local dy = math.max(m:GetPivot().Position.Y - Build.FY, 0)
-	if isShape(id) then
-		local o = Build.optsOf(m)
-		S.shape.size, S.shape.color, S.shape.mat, S.shape.ghost = o.size or S.shape.size, o.color or S.shape.color, o.mat or S.shape.mat, o.ghost or false
-	end
-	makeGhost(id)
-	ghost.yaw = yaw
-	ghost.dy = dy
-	UI.sound("Click")
-end
-
-function cardActions.paint()
-	if selected and isShape(selected:GetAttribute("Item")) then ED.open("target", selected) end
-end
-
-function cardActions.sell()
-	local m = selected
-	if not m or S.busy then return end
-	if m == deskModel then
-		toast("The reception desk is part of the hotel", "close", true)
-		return
-	end
-	if m:GetAttribute("Core") then
-		toast("Every room needs its " .. string.lower(Catalog.ITEMS[m:GetAttribute("Item")].name), "bed", true)
-		return
-	end
-	if not S.sellArmed then
-		S.sellArmed = true
-		setSellButton(true, "Sure?", "red")
-		task.delay(3, function()
-			if S.sellArmed and selected == m then
-				S.sellArmed = false
-				setSellButton(false, "$" .. commas(Catalog.sellValue(m:GetAttribute("Item"), m:GetAttribute("Size"))), "green")
-			end
-		end)
-		return
-	end
-	S.busy = true
-	local pos = m:GetPivot().Position
-	local ok, why = Remote:InvokeServer("sell", m:GetAttribute("Uid"))
-	S.busy = false
-	if ok then
-		closeCard()
-		UI.sound("Sell", pos)
-	else
-		toast(why or "Can't sell that", "close", true)
-	end
-end
-
-function cardActions.close() closeCard() end
-
 -- undo: sell the newest thing you placed that's still there (full price back within a minute)
 function S.doUndo()
 	if S.busy then return end
 	while #S.undo > 0 do
 		local u = table.remove(S.undo)
+		if u.moves then
+			-- round 42: a group moved, turned or nudged goes back together
+			local live = {}
+			for _, mv in ipairs(u.moves) do
+				if findUid(mv[1]) then table.insert(live, mv) end
+			end
+			if #live == 0 then continue end
+			closeCard()
+			S.busy = true
+			local ok, done, why = Remote:InvokeServer("moveMany", live)
+			S.busy = false
+			if ok then
+				UI.sound("Turn")
+				toast("Moved back", "rotate")
+			else
+				toast(done or why or "Can't move them back", "close", true)
+			end
+			return
+		end
+		if u.rebuy then
+			-- round 42: things sold with Delete are bought back where they stood
+			if #u.rebuy == 0 then continue end
+			S.busy = true
+			local ok, done, why = Remote:InvokeServer("placeBatch", u.rebuy)
+			S.busy = false
+			if ok then
+				UI.sound("Place")
+				toast("Bought back " .. #done .. (#done == 1 and " thing" or " things"), "rotate")
+			else
+				toast(done or why or "Can't buy that back", "close", true)
+			end
+			return
+		end
 		if u.move then
 			local ok, why
 			if u.move == "desk" then
@@ -2784,10 +2225,9 @@ applyToTarget = function()
 	if not ok then toast(why or "That doesn't fit", "close", true) end
 	-- the server rebuilds the shape: follow the new model
 	local cur = findUid(uid)
-	if cur and selected == m then
-		selected = cur
-		selHL.Adornee = cur
-		ED.target = cur
+	if cur and cur ~= m then
+		if Kit then Kit.replace(m, cur) end
+		if ED.target == m then ED.target = cur end
 	end
 	if cur then
 		local o2 = Build.optsOf(cur)
@@ -2795,6 +2235,29 @@ applyToTarget = function()
 		ED.sync()
 	end
 end
+
+---------------------------------------------------------------- BuildKit (round 42)
+
+Kit = require(Shared:WaitForChild("BuildKit"))({
+	S = S, HOTEL = HOTEL, PLACED = PLACED, Remote = Remote, gui = gui, desk = deskModel, ED = ED,
+	HINTS_IDLE = not TOUCH and HINTS_IDLE or nil,
+	toast = toast, wrapper = wrapper, kOf = kOf, layout = layout, cash = cash, itemPrice = itemPrice, lockOf = lockOf,
+	setHints = function(set) setHints(hintsFor(set)) end,
+	startPlacing = function(id) startPlacing(id) end,
+	buyRoom = function(id) buyRoom(id) end,
+	ghost = function() return ghost end,
+	makeGhost = function(id, moving) makeGhost(id, moving) end,
+	clearGhost = function() clearGhost() end,
+	turnGhost = function(dir) turnGhost(dir) end,
+	raiseGhost = function(dir) raiseGhost(dir) end,
+	reaim = function() if ghost and ghost.validate then ghost.validate() end end,
+	floorPoint = function() return floorPoint() end,
+	placedAt = function(pos) return placedAt(pos) end,
+	setSelected = function(m) selected = m end,
+	thumb = thumb,
+})
+table.insert(blockers, Kit.shopWrap)
+for _, w in ipairs(Kit.blockers) do table.insert(blockers, w) end
 
 ---------------------------------------------------------------- enter / leave
 
@@ -2956,10 +2419,9 @@ local function enter()
 	S.applyZones()
 	setBuildButton(true)
 	layout()
-	shopWrap.Visible = true
-	slideIn(shopHolder, Vector2.new(-460, 0))
-	toolWrap.Visible = true
-	slideIn(toolHolder, Vector2.new(0, 120))
+	Kit.shopWrap.Visible = true
+	slideIn(Kit.shopHolder, Vector2.new(460, 0))
+	Kit.show(true)
 	hintWrap.Visible = true
 	setHints(hintsFor(HINTS_IDLE))
 	UI.sound("Open")
@@ -2986,14 +2448,14 @@ local function leave()
 	PPS.Enabled = true
 	S.applyZones()
 	setFacade(false)
-	slideOut(shopWrap, shopHolder, Vector2.new(-460, 0))
-	slideOut(toolWrap, toolHolder, Vector2.new(0, 120))
+	slideOut(Kit.shopWrap, Kit.shopHolder, Vector2.new(460, 0))
+	Kit.show(false)
 	hintWrap.Visible = false
 	setBuildButton(false)
 	layout()
 	UI.sound("Close")
 	table.clear(held)
-	if searchInput:IsFocused() then searchInput:ReleaseFocus() end
+	if Kit.search:IsFocused() then Kit.search:ReleaseFocus() end
 end
 
 toggle = function()
@@ -3002,17 +2464,10 @@ end
 
 ---------------------------------------------------------------- input
 
-local function worldClick()
-	if ghost then
-		commit()
-	else
-		local m = placedAt()
-		if m then
-			if m == selected then closeCard() else openCard(m) end
-		else
-			closeCard()
-		end
-	end
+local function worldClick(pos)
+	-- round 42: the active tool takes the click (select, delete, paint, pick, drop a group); else place what's in hand
+	if Kit.worldClick(pos) then return end
+	if ghost then commit() end
 end
 
 ---------------------------------------------------------------- controller (round 10c)
@@ -3059,11 +2514,11 @@ local function padAction(_, state, io)
 		if kc == Enum.KeyCode.ButtonA then
 			if not overGui() then worldClick() end
 		elseif kc == Enum.KeyCode.ButtonB then
-			if ghost then clearGhost() elseif selected then closeCard() elseif not UI.closeTopmost() then toggle() end
+			if ghost then clearGhost() elseif Kit.cancel() then return Enum.ContextActionResult.Sink elseif selected then closeCard() elseif not UI.closeTopmost() then toggle() end
 		elseif kc == Enum.KeyCode.ButtonX then
-			if ghost then turnGhost(1) elseif selected then cardActions.turn() end
+			if ghost then turnGhost(1) elseif selected then Kit.act.turn() end
 		elseif kc == Enum.KeyCode.ButtonY then
-			if selected then cardActions.move() else UI.padSelect(list) end
+			if selected then Kit.act.move() else UI.padSelect(Kit.list) end
 		elseif kc == Enum.KeyCode.ButtonR1 then
 			raiseGhost(1)
 		elseif kc == Enum.KeyCode.ButtonL1 then
@@ -3105,21 +2560,22 @@ UIS.InputBegan:Connect(function(io, gp)
 	if io.UserInputType == Enum.UserInputType.Keyboard then
 		if gp then return end
 		local shift = UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
-		if PAN_KEYS[io.KeyCode] then held[io.KeyCode] = true end
-		if io.KeyCode == Enum.KeyCode.R and S.roomCycle and S.roomCycle() then
+		-- round 42: tools (1-6), nudging (arrows) and the selection's keys come first
+		local used = Kit.key(io.KeyCode)
+		if PAN_KEYS[io.KeyCode] and not used then held[io.KeyCode] = true end
+		if used then
+			-- done
+		elseif io.KeyCode == Enum.KeyCode.R and S.roomCycle and S.roomCycle() then
 			-- the room's door moved round
 		elseif io.KeyCode == Enum.KeyCode.F and S.toggleRoom then
 			S.toggleRoom()
 		elseif io.KeyCode == Enum.KeyCode.R then
-			if ghost then turnGhost(shift and -1 or 1) elseif selected then cardActions.turn() end
+			if ghost then turnGhost(shift and -1 or 1) end
 		elseif io.KeyCode == Enum.KeyCode.T or io.KeyCode == Enum.KeyCode.PageUp then raiseGhost(1)
 		elseif io.KeyCode == Enum.KeyCode.G or io.KeyCode == Enum.KeyCode.PageDown then raiseGhost(-1)
-		elseif io.KeyCode == Enum.KeyCode.C and selected then cardActions.copy()
-		elseif io.KeyCode == Enum.KeyCode.M and selected then cardActions.move()
-		elseif io.KeyCode == Enum.KeyCode.Delete and selected then cardActions.sell()
 		elseif io.KeyCode == Enum.KeyCode.Z then S.doUndo()
-		elseif io.KeyCode == Enum.KeyCode.X or io.KeyCode == Enum.KeyCode.Backspace then
-			if ghost then clearGhost() else closeCard() end
+		elseif io.KeyCode == Enum.KeyCode.X or io.KeyCode == Enum.KeyCode.Backspace or io.KeyCode == Enum.KeyCode.Escape then
+			if ghost then clearGhost() elseif not Kit.cancel() then closeCard() end
 		end
 	elseif io.UserInputType == Enum.UserInputType.MouseButton1 then
 		if gp or overGui() then return end
@@ -3141,7 +2597,13 @@ end)
 -- you let go (back where it was if it doesn't fit). Hold it on the floor and drag: the view pans, the floor
 -- staying under the cursor. The middle button pans any time, also with something in hand.
 function S.beginDrag()
+	if Kit.dragBegin(input.clickDown) then input.mode = "kit" return end
 	local m = input.downOn
+	if Kit.tool ~= "select" or Kit.groupActive() then m = nil end -- only the Select tool picks things up
+	if m and m.Parent and Kit.grab(m, floorPoint(input.clickDown)) then
+		input.mode = "group"
+		return
+	end
 	if m and m.Parent then
 		input.mode = "grab"
 		local r = m ~= deskModel and m:GetAttribute("Room") and HOTEL.Rooms:FindFirstChild(m:GetAttribute("Room"))
@@ -3168,6 +2630,7 @@ UIS.WindowFocusReleased:Connect(function()
 	input.clickDown = nil
 	S.pan = nil
 	if input.mode == "grab" and ghost and ghost.grab then clearGhost() end
+	if input.mode == "kit" or input.mode == "group" then Kit.cancel() end
 	input.mode, input.downOn = nil, nil
 end)
 UIS.InputEnded:Connect(function(io)
@@ -3180,6 +2643,10 @@ UIS.InputEnded:Connect(function(io)
 		input.mode, input.downOn, input.clickDown = nil, nil, nil
 		if mode == "pan" then
 			S.pan = nil
+		elseif mode == "kit" then
+			Kit.dragEnd()
+		elseif mode == "group" then
+			Kit.groupRelease()
 		elseif mode == "grab" and ghost and ghost.grab then
 			if ghost.ok and ghost.target then
 				commit()
@@ -3205,7 +2672,7 @@ UIS.InputEnded:Connect(function(io)
 		held[io.KeyCode] = nil
 	elseif io.UserInputType == Enum.UserInputType.MouseButton2 then
 		if S.building and input.rightDown and input.rightMoved < 6 then
-			if ghost then clearGhost() else closeCard() end
+			if ghost then clearGhost() elseif not Kit.cancel() then closeCard() end
 		end
 		input.rightDown = false
 		UIS.MouseBehavior = Enum.MouseBehavior.Default
@@ -3388,8 +2855,7 @@ UIS.TouchEnded:Connect(function(t)
 	if ghost then
 		aimGhost(pos)
 	else
-		local m = placedAt(pos)
-		if m then openCard(m) else closeCard() end
+		worldClick(pos)
 	end
 end)
 
@@ -3438,16 +2904,17 @@ RunService.RenderStepped:Connect(function(dt)
 		hoverHL.Enabled = false
 		S.dragStep()
 	else
-		local m = not TOUCH and not overGui() and placedAt() or nil
-		if m ~= hovered then
+		local m = not TOUCH and not Kit.groupActive() and not overGui() and placedAt() or nil
+		if Kit.hover(m) then
+			hovered = nil
+			hoverHL.Enabled = false
+		elseif m ~= hovered then
 			hovered = m
 			hoverHL.Adornee = m
-			hoverHL.Enabled = m ~= nil and m ~= selected
+			hoverHL.Enabled = m ~= nil and not Kit.selSet[m]
 		end
 	end
-	if selected then
-		if not selected.Parent then closeCard() else placeCard() end
-	end
+	Kit.step(dt)
 end)
 
 player.CharacterAdded:Connect(function()
@@ -3463,9 +2930,7 @@ player:GetAttributeChangedSignal("BuildWant"):Connect(function()
 	player:SetAttribute("BuildWant", nil)
 	if not S.building then enter() end
 	task.defer(function()
-		pcall(function() tabsApi.select(want, true) end)
-		S.cat = want
-		refreshCards(true)
+		Kit.openTab(want)
 	end)
 end)
 
