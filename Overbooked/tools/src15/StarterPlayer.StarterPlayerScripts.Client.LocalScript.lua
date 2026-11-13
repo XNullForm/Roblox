@@ -126,7 +126,7 @@ local function openMenu(tab) player:SetAttribute("MenuWant", tab) end
 -- round 21 (2026-11-12): the top of the HUD. Left: the hotel plate (level tile, name, stars,
 -- XP line). Centre: cash and guests. Right: a real clock: a white dial with ticks and two hands that turns navy at
 -- night, with the weather and the digital time inside it, and the day and season on a tab beside it.
-local cornerGroup = group("Corner", UDim2.fromOffset(330, 66), PHONE and UDim2.new(0, 16, 1, -18) or UDim2.fromOffset(16, 58), PHONE and Vector2.new(0, 1) or Vector2.new(0, 0), PHONE and UDim2.new(0, -460, 1, -18) or UDim2.fromOffset(-440, 58))
+local cornerGroup = group("Corner", UDim2.fromOffset(330, 80), UDim2.new(0, 16, 1, -16), Vector2.new(0, 1), UDim2.new(0, -460, 1, -16))
 local topGroup = group("Top", UDim2.fromOffset(484, 80), UDim2.new(0.5, 0, 0, 10), Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, -130))
 local clockGroup = group("Clock", UDim2.fromOffset(264, 104), UDim2.new(1, -16, 0, 8), Vector2.new(1, 0), UDim2.new(1, 300, 0, 8))
 
@@ -164,34 +164,47 @@ local function glyphTile(parent, size, color, pos, image, glyphSize)
 end
 
 ---------------------------------------------------------------- your hotel: level, name, stars, XP
-
-local lvSlot, lvBody = glass(cornerGroup, "Level", UDim2.fromScale(1, 1), UDim2.new(), function() openMenu("hotel") end, 14)
-local lvHolder = UI.new("Frame", { Name = "LvHolder", Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(10, 10), BackgroundTransparency = 1, ZIndex = 3, Parent = cornerGroup })
-local lvTile = UI.new("Frame", { Name = "Lv", Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.brand, ZIndex = 3, Parent = lvHolder })
-UI.corner(lvTile, 12)
-local lvPat = UI.new("Frame", { Visible = false, Parent = lvTile })
-local lvCap = UI.label(lvTile, "LEVEL", 9, { FontFace = UI.F.heavy, TextColor3 = T.white, TextTransparency = 0.2, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 10), ZIndex = 4 })
-local levelNum = UI.label(lvTile, "1", 24, { FontFace = UI.F.black, TextColor3 = T.white, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 28), ZIndex = 4 })
+-- round 41: a new hotel badge in the bottom-left corner (clear of Roblox's buttons and the chat window): a deep navy
+-- card with a blue level column, the hotel's name in white, big stars and a thick XP bar along the bottom.
+local lvSlot = UI.new("TextButton", { Name = "Level", Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = cornerGroup })
+UI.shadow(lvSlot, { drop = 6, transparency = 0.55 })
+local lvBody = UI.new("Frame", { Name = "Body", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), ClipsDescendants = true, Parent = lvSlot })
+UI.corner(lvBody, 18)
+UI.grad(lvBody, Color3.fromRGB(40, 52, 78), Color3.fromRGB(20, 26, 40), 90)
+UI.rim(lvBody, Color3.fromRGB(86, 104, 140), 2).Transparency = 0
+local lvTile = UI.new("Frame", { Name = "Lv", Size = UDim2.new(0, 70, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 3, Parent = lvBody })
+UI.grad(lvTile, Color3.fromRGB(64, 160, 255), T.brandDk, 90)
+UI.gloss(lvTile, 0, 0.3)
+local lvHolder = lvTile
+UI.label(lvTile, "LEVEL", 13, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextTransparency = 0.15, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 10), Size = UDim2.new(1, 0, 0, 16), ZIndex = 5 })
+local levelNum = UI.label(lvTile, "1", 32, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 36), ZIndex = 5 })
+UI.textStroke(levelNum, 2, 0.6)
 local starBadge = lvTile
-local hotelName = UI.label(lvBody, "", 17, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(66, 8), Size = UDim2.new(1, -78, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
-local STAR = 14
-local rateSlot = UI.new("Frame", { Name = "Rating", Size = UDim2.fromOffset(120, STAR), Position = UDim2.fromOffset(66, 30), BackgroundTransparency = 1, ZIndex = 4, Parent = lvBody })
+local hotelName = UI.label(lvBody, "", 20, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(84, 9), Size = UDim2.new(1, -96, 0, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4 })
+local STAR = 18
+local rateSlot = UI.new("Frame", { Name = "Rating", Size = UDim2.fromOffset(170, STAR), Position = UDim2.fromOffset(84, 37), BackgroundTransparency = 1, ZIndex = 4, Parent = lvBody })
 local starClips = {}
 for i = 1, 5 do
 	local holder = UI.new("Frame", { Size = UDim2.fromOffset(STAR, STAR), Position = UDim2.fromOffset((i - 1) * (STAR + 2), 0), BackgroundTransparency = 1, ZIndex = 4, Parent = rateSlot })
-	UI.new("ImageLabel", { Image = G.star, ImageColor3 = T.line, Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
+	UI.new("ImageLabel", { Image = G.star, ImageColor3 = Color3.fromRGB(70, 82, 106), Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = holder })
 	local clip = UI.new("Frame", { Size = UDim2.fromOffset(0, STAR), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 5, Parent = holder })
 	UI.new("ImageLabel", { Image = G.star, ImageColor3 = T.sun, Size = UDim2.fromOffset(STAR, STAR), ZIndex = 5, Parent = clip })
 	starClips[i] = clip
 end
-local starNum = UI.label(rateSlot, "1.0", 13, { FontFace = UI.F.heavy, TextColor3 = T.sun, Position = UDim2.fromOffset(5 * (STAR + 2) + 3, -1), Size = UDim2.fromOffset(36, STAR + 2), ZIndex = 5 })
-local xpTrack = UI.new("Frame", { Name = "XP", Size = UDim2.new(1, -78, 0, 5), Position = UDim2.fromOffset(66, 51), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = lvBody })
-UI.corner(xpTrack, 3)
-local xpFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = T.brand, ZIndex = 5, Parent = xpTrack })
-UI.corner(xpFill, 3)
-local xpText = UI.label(lvBody, "", 11, { FontFace = UI.F.bold, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -12, 0, 31), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(140, 13), ZIndex = 5 })
+local starNum = UI.label(rateSlot, "1.0", 16, { FontFace = UI.F.black, TextColor3 = T.sun, Position = UDim2.fromOffset(5 * (STAR + 2) + 4, -1), Size = UDim2.fromOffset(40, STAR + 2), ZIndex = 5 })
+local xpTrack = UI.new("Frame", { Name = "XP", Size = UDim2.new(1, -96, 0, 10), Position = UDim2.new(0, 84, 1, -18), BackgroundColor3 = Color3.fromRGB(14, 18, 28), ZIndex = 4, Parent = lvBody })
+UI.corner(xpTrack, 5)
+local xpFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 5, Parent = xpTrack })
+UI.corner(xpFill, 5)
+UI.grad(xpFill, Color3.fromRGB(120, 200, 255), T.brand, 90)
+local xpText = UI.label(lvBody, "", 14, { FontFace = UI.F.heavy, TextColor3 = Color3.fromRGB(176, 190, 214), TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -12, 0, 38), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(110, 16), ZIndex = 5 })
 local levelLbl = xpText
-local xpSweep = UI.new("Frame", { Visible = false, Parent = xpFill })
+do
+	local sc = UI.scaleOf(lvSlot)
+	lvSlot.MouseEnter:Connect(function() UI.tween(sc, 0.18, { Scale = 1.03 }, Enum.EasingStyle.Back) end)
+	lvSlot.MouseLeave:Connect(function() UI.tween(sc, 0.2, { Scale = 1 }, Enum.EasingStyle.Quint) end)
+	lvSlot.Activated:Connect(function() UI.sound("Click") openMenu("hotel") end)
+end
 UI.tooltip(lvSlot, "Your hotel: check guests in, give great stays, clean and research to earn XP")
 
 ---------------------------------------------------------------- the money and the guests
@@ -201,26 +214,23 @@ local cashSlot, cashBody = glass(topGroup, "Cash", UDim2.fromOffset(240, 46), UD
 local cashTile, cashIcon = glyphTile(cashBody, 34, T.green, UDim2.fromOffset(6, 6), G.cash, 22)
 local cashText = UI.label(cashBody, "$0", 22, {
 	FontFace = UI.F.black, TextColor3 = T.cream, TextScaled = true, ZIndex = 4,
-	Position = UDim2.fromOffset(50, 9), Size = UDim2.new(1, -96, 1, -18),
+	Position = UDim2.fromOffset(50, 9), Size = UDim2.new(1, -62, 1, -18),
 })
-UI.new("UITextSizeConstraint", { MaxTextSize = 23, MinTextSize = 12, Parent = cashText })
-local plusBtn = UI.new("TextButton", { Name = "Plus", Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(30, 30), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = cashBody })
-plusBtn.BackgroundTransparency = 0
-UI.corner(plusBtn, 8)
-UI.icon(plusBtn, ICON.upgrade, 26, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 5 })
-plusBtn.MouseEnter:Connect(function() UI.tween(plusBtn, 0.12, { BackgroundColor3 = T.line }) end)
-plusBtn.MouseLeave:Connect(function() UI.tween(plusBtn, 0.14, { BackgroundColor3 = T.ink2 }) end)
-plusBtn.Activated:Connect(function()
-	UI.sound("Click")
-	openMenu("upgrades")
-end)
-UI.tooltip(plusBtn, "Upgrades")
+UI.new("UITextSizeConstraint", { MaxTextSize = 24, MinTextSize = 14, Parent = cashText })
 local flyLayer = UI.new("Frame", { Name = "Fly", Size = UDim2.fromOffset(220, 80), Position = UDim2.fromOffset(50, 48), BackgroundTransparency = 1, ZIndex = 8, Parent = cashSlot })
 
 local roomSlot, roomBody = glass(topGroup, "Rooms", UDim2.fromOffset(160, 46), UDim2.fromOffset(TOP_X + 248, 6), function() openMenu("hotel") end)
 local roomTile = glyphTile(roomBody, 34, T.brand, UDim2.fromOffset(6, 6), G.guest, 20)
 local roomNum = UI.label(roomBody, "0/0", 20, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(50, 4), Size = UDim2.fromOffset(100, 22), ZIndex = 4 })
-UI.label(roomBody, "GUESTS", 10, { FontFace = UI.F.heavy, TextColor3 = T.muted, Position = UDim2.fromOffset(51, 26), Size = UDim2.fromOffset(100, 12), ZIndex = 4 })
+local guestsCap = UI.label(roomBody, "GUESTS", 13, { FontFace = UI.F.heavy, TextColor3 = T.muted, Position = UDim2.fromOffset(51, 25), Size = UDim2.fromOffset(100, 15), ZIndex = 4 })
+-- round 41: a closed hotel says so on the guests plate
+local function refreshClosed()
+	local closed = HOTEL:GetAttribute("Closed") == true
+	guestsCap.Text = closed and "CLOSED" or "GUESTS"
+	guestsCap.TextColor3 = closed and T.red or T.muted
+end
+HOTEL:GetAttributeChangedSignal("Closed"):Connect(refreshClosed)
+refreshClosed()
 UI.tooltip(roomSlot, "Guests staying / your guest rooms")
 -- rooms waiting for a clean: a red tab under the guests plate
 local dirtyChip = UI.new("Frame", { Name = "Dirty", BackgroundColor3 = T.red, Size = UDim2.fromOffset(0, 24), AutomaticSize = Enum.AutomaticSize.X, Position = UDim2.fromOffset(0, 52), Visible = false, ZIndex = 5, Parent = roomSlot })
@@ -231,7 +241,7 @@ dirtyStroke.Parent = dirtyChip
 UI.pad(dirtyChip, 8, 0, 10, 0)
 UI.list(dirtyChip, Enum.FillDirection.Horizontal, 6, nil, Enum.VerticalAlignment.Center)
 UI.new("ImageLabel", { Image = G.clean, ImageColor3 = T.white, Size = UDim2.fromOffset(14, 14), LayoutOrder = 1, ZIndex = 6, Parent = dirtyChip })
-local dirtyText = UI.new("TextLabel", { Text = "", TextSize = 12, FontFace = UI.F.heavy, TextColor3 = T.white, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, ZIndex = 6, Parent = dirtyChip })
+local dirtyText = UI.new("TextLabel", { Text = "", TextSize = 14, FontFace = UI.F.heavy, TextColor3 = T.white, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, ZIndex = 6, Parent = dirtyChip })
 local openTag = UI.new("Frame", { Visible = false, Parent = roomBody })
 local openText = UI.label(openTag, "", 10, {})
 
@@ -240,8 +250,8 @@ local openText = UI.label(openTag, "", 10, {})
 local FACE = 96
 -- the day tab tucks under the dial's left side
 local clockSlot, clockBody = glass(clockGroup, "Clock", UDim2.fromOffset(196, 50), UDim2.fromOffset(0, 23), nil, 14)
-local dayLbl = UI.label(clockBody, "MONDAY", 15, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(14, 7), Size = UDim2.fromOffset(120, 18), ZIndex = 4 })
-local dateLbl = UI.label(clockBody, "Spring, day 1", 12, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(14, 25), Size = UDim2.fromOffset(120, 15), ZIndex = 4 })
+local dayLbl = UI.label(clockBody, "MONDAY", 17, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(14, 5), Size = UDim2.fromOffset(120, 20), ZIndex = 4 })
+local dateLbl = UI.label(clockBody, "Spring, day 1", 14, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(14, 25), Size = UDim2.fromOffset(120, 16), ZIndex = 4 })
 local dayTrack = UI.new("Frame", { Size = UDim2.fromOffset(104, 3), Position = UDim2.fromOffset(14, 43), BackgroundColor3 = T.ink2, ZIndex = 4, Parent = clockBody })
 UI.corner(dayTrack, 2)
 local dayFill = UI.new("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), BackgroundColor3 = T.sun, ZIndex = 5, Parent = dayTrack })
@@ -271,7 +281,7 @@ for i = 0, 11 do
 end
 -- what the dial tells you besides the time: the weather above the centre, the digital time below it
 local skyIcon = UI.new("ImageLabel", { Name = "Weather", Image = G.sun, ImageColor3 = T.sun, Size = UDim2.fromOffset(20, 20), Position = UDim2.new(0.5, 0, 0.5, -24), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 7, Parent = skyTile })
-local clockText = UI.label(skyTile, "", 12, { FontFace = UI.F.black, TextColor3 = INK_DAY, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 0.5, 14), Size = UDim2.new(1, 0, 0, 14), ZIndex = 7 })
+local clockText = UI.label(skyTile, "", 15, { FontFace = UI.F.black, TextColor3 = INK_DAY, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.new(0, 0, 0.5, 12), Size = UDim2.new(1, 0, 0, 17), ZIndex = 7 })
 local hourHand = spoke(0, FACE / 2 - 24, 5, 24, 8)
 local minuteHand = spoke(0, FACE / 2 - 12, 3, 12, 9)
 local cap = UI.new("Frame", { Size = UDim2.fromOffset(9, 9), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.brand, ZIndex = 10, Parent = skyTile })
@@ -313,7 +323,7 @@ local function refreshXP()
 	local xp = HOTEL:GetAttribute("XP") or 0
 	local need = HOTEL:GetAttribute("XPNeed") or Levels.need(lv)
 	levelNum.Text = tostring(lv)
-	levelNum.TextSize = lv >= 100 and 18 or 24
+	levelNum.TextSize = lv >= 100 and 24 or 32
 	xpText.Text = lv >= Levels.MAX and "MAX LEVEL" or (UI.commas(xp) .. " / " .. UI.commas(need) .. " XP")
 	local k = lv >= Levels.MAX and 1 or math.clamp(xp / math.max(need, 1), 0, 1)
 	if lv > shownLevel then
@@ -322,8 +332,7 @@ local function refreshXP()
 			UI.tween(xpFill, 0.4, { Size = UDim2.fromScale(k, 1) })
 		end)
 		UI.pop(lvTile, 1.5, 0.3)
-		lvTile.BackgroundColor3 = T.sun
-		UI.tween(lvTile, 1.2, { BackgroundColor3 = T.brand })
+		UI.sound("Coins")
 	else
 		UI.tween(xpFill, 0.4, { Size = UDim2.fromScale(k, 1) })
 	end
@@ -924,8 +933,8 @@ end
 
 ---------------------------------------------------------------- chapter goals (round 10c): the right side
 
-local QW = 344
-local questWrap = group("Quests", UDim2.fromOffset(QW, 330), UDim2.new(1, -16, 0.5, -120), Vector2.new(1, 0), UDim2.new(1, QW + 60, 0.5, -120))
+local QW = 300
+local questWrap = group("Quests", UDim2.fromOffset(QW, 250), UDim2.new(1, -16, 0.5, -120), Vector2.new(1, 0), UDim2.new(1, QW + 60, 0.5, -120))
 
 if PHONE then
 	local function phoneLayout()
@@ -946,7 +955,7 @@ if PHONE then
 		ck.away = ck.home + UDim2.fromOffset(240, 0)
 		local cn = groups.Corner
 		cn.frame.AutoScale.Scale = k
-		cn.home = UDim2.fromOffset(10, vp.Y - 10)
+		cn.home = UDim2.new(0, 10, 1, -10)
 		cn.frame.Position = cn.home
 		cn.away = cn.home - UDim2.fromOffset(440, 0)
 		local barBottom = topY + 76 * k
@@ -964,25 +973,25 @@ if PHONE then
 end
 
 -- the header: clipboard badge, chapter and title, how many are done, a collapse arrow
-local qHead = UI.new("TextButton", { Name = "Header", Text = "", AutoButtonColor = false, Size = UDim2.new(1, 0, 0, 58), BackgroundTransparency = 1, Parent = questWrap })
-local qHeadPill = plate(qHead, { Name = "Pill", Size = UDim2.new(1, -22, 0, 52), Position = UDim2.fromOffset(22, 3), radius = 18 })
-qHeadPill.BackgroundTransparency = 0.15
+-- round 41: compact: a slim header (icon, chapter title, count, arrow) over one-line goal rows
+local qHead = UI.new("TextButton", { Name = "Header", Text = "", AutoButtonColor = false, Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, Parent = questWrap })
+local qHeadPill = plate(qHead, { Name = "Pill", Size = UDim2.new(1, 0, 0, 42), radius = 14 })
 qHeadPill:FindFirstChildOfClass("UIStroke").Color = T.gold
-local qBadge = UI.icon(qHead, ICON.quest, 64, { Position = UDim2.fromOffset(-8, -3), ZIndex = 3 })
-local qChapter = UI.label(qHeadPill, "CHAPTER 1", 12, { FontFace = UI.F.black, TextColor3 = T.gold, Position = UDim2.fromOffset(46, 7), Size = UDim2.new(1, -130, 0, 14) })
-local qTitle = UI.label(qHeadPill, "", 19, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(46, 21), Size = UDim2.new(1, -120, 0, 24), TextTruncate = Enum.TextTruncate.AtEnd })
-local qCount = UI.label(qHeadPill, "0/5", 15, { FontFace = UI.F.black, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -48, 0, 0), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(50, 52) })
-local qArrowBg = UI.new("Frame", { Size = UDim2.fromOffset(30, 30), Position = UDim2.new(1, -10, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.ink2, Parent = qHeadPill })
-UI.corner(qArrowBg, 15)
-local qArrow = UI.icon(qArrowBg, ICON.up, 22, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
--- a thin bar under the title: the chapter's progress
-local chTrack = UI.new("Frame", { Size = UDim2.new(1, -60, 0, 4), Position = UDim2.new(0, 46, 1, -6), BackgroundColor3 = T.ink2, BorderSizePixel = 0, Parent = qHeadPill })
+local qBadge = UI.icon(qHeadPill, ICON.quest, 34, { Position = UDim2.new(0, 6, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), ZIndex = 3 })
+local qChapter = UI.label(qHeadPill, "CHAPTER 1", 12, { FontFace = UI.F.black, TextColor3 = T.gold, Position = UDim2.fromOffset(46, 4), Size = UDim2.new(1, -120, 0, 14) })
+local qTitle = UI.label(qHeadPill, "", 17, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(46, 17), Size = UDim2.new(1, -120, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd })
+local qCount = UI.label(qHeadPill, "0/5", 15, { FontFace = UI.F.black, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(1, -40, 0, 0), AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(50, 42) })
+local qArrowBg = UI.new("Frame", { Size = UDim2.fromOffset(26, 26), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.ink2, Parent = qHeadPill })
+UI.corner(qArrowBg, 13)
+local qArrow = UI.icon(qArrowBg, ICON.up, 18, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+-- a thin bar along the header's foot: the chapter's progress
+local chTrack = UI.new("Frame", { Size = UDim2.new(1, -60, 0, 3), Position = UDim2.new(0, 46, 1, -5), BackgroundColor3 = T.ink2, BorderSizePixel = 0, Parent = qHeadPill })
 UI.corner(chTrack, 2)
 local chFill = UI.new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = T.gold, BorderSizePixel = 0, Parent = chTrack })
 UI.corner(chFill, 2)
 
-local qList = UI.new("Frame", { Name = "List", Size = UDim2.new(1, 0, 0, 3 * 88), Position = UDim2.fromOffset(0, 66), BackgroundTransparency = 1, Parent = questWrap })
-UI.list(qList, Enum.FillDirection.Vertical, 8, Enum.HorizontalAlignment.Right)
+local qList = UI.new("Frame", { Name = "List", Size = UDim2.new(1, 0, 0, 4 * 56), Position = UDim2.fromOffset(0, 50), BackgroundTransparency = 1, Parent = questWrap })
+UI.list(qList, Enum.FillDirection.Vertical, 6, Enum.HorizontalAlignment.Right)
 
 local cards = {} -- quest id -> card bits
 local completing = 0
@@ -1005,38 +1014,28 @@ local function questState()
 end
 
 local function makeCard(q)
-	local holder = UI.new("Frame", { Name = q.id, Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1, LayoutOrder = q.order, Parent = qList })
+	-- round 41: a compact row: icon, the goal and a slim bar with the count, the cash reward on the right
+	local holder = UI.new("Frame", { Name = q.id, Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = q.order, Parent = qList })
 	local card = UI.new("CanvasGroup", { Name = "Card", Size = UDim2.new(1, -22, 1, 0), Position = UDim2.fromOffset(22, 0), BackgroundColor3 = T.paper or T.ink, Parent = holder })
-	UI.corner(card, 16)
-	local stroke = UI.stroke(card, 2.5, T.outline or T.line, 0)
-	local tile = UI.new("Frame", { Size = UDim2.fromOffset(58, 58), Position = UDim2.new(0, 10, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundColor3 = T.ink2, Parent = card })
-	UI.corner(tile, 14)
-	UI.stroke(tile, 1.5, T.line, 0.4)
-	local ic = UI.icon(tile, ICON[q.icon] or ICON.star, 44, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
-	if q.side then -- round 38: odd jobs get a blue tile and a tag
-		tile.BackgroundColor3 = Color3.fromRGB(222, 236, 255)
-		local tag = UI.new("Frame", { Size = UDim2.fromOffset(56, 16), Position = UDim2.new(0.5, 0, 1, 2), AnchorPoint = Vector2.new(0.5, 1), BackgroundColor3 = Color3.fromRGB(70, 130, 230), ZIndex = 4, Parent = tile })
-		UI.corner(tag, 8)
-		UI.label(tag, "ODD JOB", 10, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 5 })
-	end
-	UI.label(card, q.text, 16, { FontFace = UI.F.heavy, TextColor3 = T.cream, Position = UDim2.fromOffset(80, 10), Size = UDim2.new(1, -90, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd })
-	local track = UI.new("Frame", { Size = UDim2.new(1, -172, 0, 20), Position = UDim2.fromOffset(80, 44), BackgroundColor3 = T.ink2, Parent = card })
-	UI.corner(track, 10)
-	UI.stroke(track, 1, T.line, 0.4)
+	UI.corner(card, 12)
+	local stroke = UI.stroke(card, 2, q.side and Color3.fromRGB(150, 190, 245) or (T.outline or T.line), 0)
+	local tile = UI.new("Frame", { Size = UDim2.fromOffset(38, 38), Position = UDim2.new(0, 6, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundColor3 = q.side and Color3.fromRGB(222, 236, 255) or T.ink2, Parent = card })
+	UI.corner(tile, 10)
+	local ic = UI.icon(tile, ICON[q.icon] or ICON.star, 32, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+	UI.label(card, (q.side and "Odd job: " or "") .. q.text, 15, { FontFace = UI.F.heavy, TextColor3 = T.cream, Position = UDim2.fromOffset(52, 6), Size = UDim2.new(1, -124, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd })
+	local track = UI.new("Frame", { Size = UDim2.new(1, -124, 0, 16), Position = UDim2.fromOffset(52, 27), BackgroundColor3 = T.ink2, Parent = card })
+	UI.corner(track, 8)
 	local fill = UI.new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.new(1, 1, 1), Parent = track })
-	UI.corner(fill, 10)
+	UI.corner(fill, 8)
 	local fillGrad = UI.grad(fill, Color3.fromRGB(255, 226, 140), T.goldDk, 90)
 	local prog = UI.label(track, "", 13, { FontFace = UI.F.black, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 3 })
 	UI.textStroke(prog, 1.5, 0.2)
-	-- the reward: cash on top, XP under it
-	local rew = UI.new("Frame", { Size = UDim2.fromOffset(84, 50), Position = UDim2.new(1, -8, 0, 26), AnchorPoint = Vector2.new(1, 0), BackgroundTransparency = 1, Parent = card })
-	UI.list(rew, Enum.FillDirection.Vertical, 0, Enum.HorizontalAlignment.Right)
-	local cashRow = UI.new("Frame", { Size = UDim2.fromOffset(84, 24), BackgroundTransparency = 1, LayoutOrder = 1, Parent = rew })
-	UI.list(cashRow, Enum.FillDirection.Horizontal, 3, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
-	UI.icon(cashRow, ICON.cash, 22, { LayoutOrder = 1 })
-	UI.new("TextLabel", { Text = "+$" .. UI.commas(q.cash or 0), TextSize = 16, FontFace = UI.F.black, TextColor3 = T.greenDk, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, Parent = cashRow })
+	-- the reward: cash, with the XP under it
+	local rew = UI.new("Frame", { Size = UDim2.fromOffset(64, 40), Position = UDim2.new(1, -6, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, Parent = card })
+	UI.list(rew, Enum.FillDirection.Vertical, 0, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
+	UI.new("TextLabel", { Text = "+$" .. UI.commas(q.cash or 0), TextSize = 15, FontFace = UI.F.black, TextColor3 = T.greenDk, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.fromOffset(64, 18), LayoutOrder = 1, Parent = rew })
 	if (q.xp or 0) > 0 then
-		UI.label(rew, "+" .. q.xp .. " XP", 12, { FontFace = UI.F.black, TextColor3 = T.violetDk, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.fromOffset(84, 16), LayoutOrder = 2 })
+		UI.label(rew, "+" .. q.xp .. " XP", 13, { FontFace = UI.F.black, TextColor3 = T.violetDk, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.fromOffset(64, 16), LayoutOrder = 2 })
 	end
 	local c = { q = q, holder = holder, card = card, stroke = stroke, tile = tile, ic = ic, fill = fill, fillGrad = fillGrad, prog = prog, shown = -1 }
 	cards[q.id] = c
@@ -1067,14 +1066,14 @@ local function completeCard(id)
 	c.stroke.Color = T.green
 	c.stroke.Transparency = 0
 	c.ic.ImageTransparency = 0.55
-	local chk = UI.icon(c.tile, ICON.checkmark, 46, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 5 })
+	local chk = UI.icon(c.tile, ICON.checkmark, 32, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 5 })
 	UI.pop(chk, 0.2, 0.45)
 	UI.pop(c.holder, 1.07, 0.35)
 	UI.sound("Coins")
 	-- a shine sweeps across the card
 	local shine = UI.new("Frame", { Size = UDim2.new(0, 70, 1, 0), Position = UDim2.new(0, -80, 0, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.4, BorderSizePixel = 0, Rotation = 0, ZIndex = 6, Parent = c.card })
 	UI.grad(shine, Color3.new(1, 1, 1), Color3.new(1, 1, 1), 0).Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1) })
-	UI.tween(shine, 0.7, { Position = UDim2.new(1, 10, 0, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0.1)
+	UI.tween(shine, 0.6, { Position = UDim2.new(1, 10, 0, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0.1)
 	task.delay(1.8, function()
 		UI.tween(c.card, 0.35, { Position = UDim2.fromOffset(QW + 40, 0), GroupTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.wait(0.35)
@@ -1234,12 +1233,12 @@ function layoutGroups()
 	local k = s and s.Scale or 1
 	groups.Quests.home = UDim2.new(1, -16, 0.5, -120)
 	groups.Quests.away = UDim2.new(1, QW * k + 60, 0.5, -120)
-	if not hidden and not (player:GetAttribute("HideQuests") == true or player:GetAttribute("MenuOpen") == true) then groups.Quests.frame.Position = groups.Quests.home end
+	if not hidden and not (player:GetAttribute("HideQuests") == true or player:GetAttribute("MenuOpen") == true or player:GetAttribute("InTutorial") == true) then groups.Quests.frame.Position = groups.Quests.home end
 end
 layoutGroups()
 -- the goals step aside when switched off in Settings and while the menu window is open
 local function questsOff()
-	return player:GetAttribute("HideQuests") == true or player:GetAttribute("MenuOpen") == true
+	return player:GetAttribute("HideQuests") == true or player:GetAttribute("MenuOpen") == true or player:GetAttribute("InTutorial") == true
 end
 local function setHidden(h)
 	if h == hidden then return end
@@ -1265,11 +1264,12 @@ local function applyQuestSetting()
 end
 player:GetAttributeChangedSignal("HideQuests"):Connect(applyQuestSetting)
 player:GetAttributeChangedSignal("MenuOpen"):Connect(applyQuestSetting)
+player:GetAttributeChangedSignal("InTutorial"):Connect(applyQuestSetting)
 
 -- the HUD arrives: each group slides in from its edge, the bar's pills one after another
-for _, g in pairs(groups) do
+for name, g in pairs(groups) do
 	g.frame.Position = g.away
-	UI.tween(g.frame, 0.6, { Position = g.home }, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0.15)
+	if not (name == "Quests" and questsOff()) then UI.tween(g.frame, 0.6, { Position = g.home }, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0.15) end
 end
 if questsOff() then applyQuestSetting() end
 for i, s in ipairs({ lvSlot, cashSlot, rateSlot, roomSlot, clockSlot }) do

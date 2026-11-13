@@ -694,7 +694,7 @@ end)
 
 UIS.InputBegan:Connect(function(io, gp)
 	if gp then return end
-	if (io.KeyCode == Enum.KeyCode.R or io.KeyCode == Enum.KeyCode.DPadRight) and not player:GetAttribute("Building") and player:GetAttribute("Slot") then
+	if (io.KeyCode == Enum.KeyCode.R or io.KeyCode == Enum.KeyCode.DPadRight) and not player:GetAttribute("Building") and player:GetAttribute("Slot") and (isOpen or not UI.locked("research")) then
 		if isOpen then close() else open() end
 	end
 end)

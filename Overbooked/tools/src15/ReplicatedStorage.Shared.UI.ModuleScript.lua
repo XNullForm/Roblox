@@ -170,6 +170,13 @@ function UI.isLight(c) return (c.R * 0.299 + c.G * 0.587 + c.B * 0.114) > 0.6 en
 
 ---------------------------------------------------------------- building blocks
 
+-- round 41: nothing on screen is smaller than readable: any text under 15 grows by up to 3 (9 -> 12, 12+ -> 15)
+local function readable(size)
+	if type(size) == "number" and size < 15 then return math.min(size + 3, 15) end
+	return size
+end
+UI.readable = readable
+
 function UI.new(class, props, children)
 	local o = Instance.new(class)
 	if class == "Frame" or class == "TextLabel" or class == "TextButton" or class == "ImageLabel" or class == "ImageButton" or class == "ScrollingFrame" or class == "CanvasGroup" then
@@ -191,6 +198,7 @@ function UI.new(class, props, children)
 	for k, v in pairs(props or {}) do
 		if k ~= "Parent" then o[k] = v end
 	end
+	if props and props.TextSize then o.TextSize = readable(props.TextSize) end
 	for _, c in ipairs(children or {}) do c.Parent = o end
 	if props and props.Parent then o.Parent = props.Parent end
 	return o
@@ -416,7 +424,7 @@ function UI.label(parent, text, size, props)
 	local l = UI.new("TextLabel", {
 		Text = text or "",
 		TextSize = size or 18,
-		Size = UDim2.new(1, 0, 0, (size or 18) + 6),
+		Size = UDim2.new(1, 0, 0, readable(size or 18) + 6),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = parent,
 	})
@@ -1239,16 +1247,24 @@ end
 -- stack: its pill counts up (x2, x3) and its timer restarts. At most four show; click one to dismiss it.
 local toastGui, toastList
 local liveToasts = {}
+-- round 41: the tutorial unlocks the game's pages as it goes. Player attribute TutLock = ",build,hotel,..." lists
+-- what is still locked (set by TutorialClient; nil = everything open). UI.locked(id) asks about one page.
+function UI.locked(id)
+	local s = Players.LocalPlayer:GetAttribute("TutLock")
+	return type(s) == "string" and id ~= nil and s:find("," .. id .. ",", 1, true) ~= nil
+end
+
 function UI.toast(text, icon, kind)
 	text = tostring(text or "")
 	if not toastGui then
 		local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
 		toastGui = UI.new("ScreenGui", { Name = "Toasts", DisplayOrder = 40, ResetOnSpawn = false, Parent = pg })
+		-- round 41: notifications stack under the clock on the right (two at most), clear of the tutorial card
 		toastList = UI.new("Frame", {
-			Size = UDim2.fromOffset(560, 300), Position = UDim2.new(0.5, 0, 0, 84), AnchorPoint = Vector2.new(0.5, 0),
+			Size = UDim2.fromOffset(400, 140), Position = UDim2.new(1, -16, 0, 122), AnchorPoint = Vector2.new(1, 0),
 			BackgroundTransparency = 1, Parent = toastGui,
 		})
-		UI.list(toastList, nil, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top)
+		UI.list(toastList, nil, 6, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Top)
 		UI.autoScale(toastList)
 	end
 	local LIFE = 4.2
@@ -1265,11 +1281,8 @@ function UI.toast(text, icon, kind)
 	-- callers pass either an image or a glyph name ("close", "check"); a name draws in the accent tile
 	local glyph = type(icon) == "string" and not icon:find("://", 1, true) and UI.G[icon] or nil
 	if type(icon) == "string" and not icon:find("://", 1, true) then icon = nil end
-	local holder = UI.new("Frame", { Size = UDim2.fromOffset(0, 52), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, LayoutOrder = math.floor(os.clock() * 100), Parent = toastList })
-	local card = UI.new("CanvasGroup", { Size = UDim2.fromOffset(0, 46), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.hud, BackgroundTransparency = 0.06, GroupTransparency = 1, Position = UDim2.fromOffset(0, -12), Parent = holder })
-	card.BackgroundColor3 = T.ink
-	card.BackgroundTransparency = 0
-	card.Size = UDim2.fromOffset(0, 52)
+	local holder = UI.new("Frame", { Size = UDim2.fromOffset(380, 60), BackgroundTransparency = 1, LayoutOrder = -math.floor(os.clock() * 100), Parent = toastList })
+	local card = UI.new("CanvasGroup", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.ink, BackgroundTransparency = 0, GroupTransparency = 1, Position = UDim2.fromOffset(40, 0), Parent = holder })
 	UI.corner(card, 16)
 	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = card })
 	local st = Instance.new("UIStroke")
@@ -1277,7 +1290,7 @@ function UI.toast(text, icon, kind)
 	st.Thickness = 2
 	st.Parent = card
 	UI.new("Frame", { Name = "Stripe", Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = accent, BorderSizePixel = 0, ZIndex = 2, Parent = card })
-	local row = UI.new("Frame", { Size = UDim2.fromOffset(0, 52), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Parent = card })
+	local row = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = card })
 	UI.pad(row, 12, 0, 18, 0)
 	UI.list(row, Enum.FillDirection.Horizontal, 10, nil, Enum.VerticalAlignment.Center)
 	local tile = UI.new("Frame", { Size = UDim2.fromOffset(icon and 40 or 32, icon and 40 or 32), BackgroundColor3 = accent, BackgroundTransparency = icon and 1 or 0, LayoutOrder = 1, Parent = row })
@@ -1288,11 +1301,10 @@ function UI.toast(text, icon, kind)
 		Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Parent = tile,
 	})
 	local label = UI.new("TextLabel", {
-		Text = text, TextSize = 17, FontFace = UI.F.heavy, TextColor3 = T.cream, AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, 52), LayoutOrder = 2, Parent = row,
+		Text = text, TextSize = 17, FontFace = UI.F.heavy, TextColor3 = T.cream, TextWrapped = true, TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(1, -(icon and 50 or 42) - 44, 1, -10), LayoutOrder = 2, Parent = row,
 	})
-	UI.new("UISizeConstraint", { MaxSize = Vector2.new(460, 52), Parent = label })
-	label.TextTruncate = Enum.TextTruncate.AtEnd
+	UI.new("UITextSizeConstraint", { MaxTextSize = 18, MinTextSize = 13, Parent = label })
 	local badge = UI.new("TextLabel", {
 		Text = "", TextSize = 13, FontFace = UI.F.heavy, TextColor3 = T.white, BackgroundColor3 = accent, Visible = false,
 		AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 22), LayoutOrder = 3, Parent = row,
@@ -1309,7 +1321,7 @@ function UI.toast(text, icon, kind)
 		me.alive = false
 		local i = table.find(liveToasts, me)
 		if i then table.remove(liveToasts, i) end
-		UI.tween(card, 0.18, { GroupTransparency = 1, Position = UDim2.fromOffset(0, -8) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		UI.tween(card, 0.18, { GroupTransparency = 1, Position = UDim2.fromOffset(30, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.delay(0.2, function() holder:Destroy() end)
 	end
 	function me.restart()
@@ -1323,7 +1335,7 @@ function UI.toast(text, icon, kind)
 	me.leave = leave
 	hit.Activated:Connect(leave)
 	table.insert(liveToasts, me)
-	while #liveToasts > 4 do liveToasts[1].leave() end
+	while #liveToasts > 2 do liveToasts[1].leave() end
 	UI.tween(card, 0.22, { GroupTransparency = 0, Position = UDim2.new() }, Enum.EasingStyle.Quint)
 	me.restart()
 	UI.sound(kind == "bad" and "Error" or "Toast")

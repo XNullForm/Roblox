@@ -128,6 +128,7 @@ local function done(plot)
 end
 
 -- one piece of mess at `pos`; onClean(player) runs when someone cleans it
+local cleaners = {} -- round 41: mess model -> its clean(player)
 local function place(folder, pos, kind, onClean)
 	local m = Instance.new("Model")
 	m.Name = "Mess_" .. kind
@@ -142,7 +143,7 @@ local function place(folder, pos, kind, onClean)
 	pr.MaxActivationDistance = 9
 	pr.RequiresLineOfSight = false
 	pr.Parent = base
-	pr.Triggered:Connect(function(player)
+	local function clean(player)
 		if not m.Parent then return end
 		local at = base.Position
 		m:Destroy()
@@ -150,8 +151,30 @@ local function place(folder, pos, kind, onClean)
 		player:SetAttribute("Cash", (player:GetAttribute("Cash") or 0) + PAY)
 		player:SetAttribute("Earned", (player:GetAttribute("Earned") or 0) + PAY)
 		onClean(player)
+	end
+	cleaners[m] = clean
+	m.Destroying:Connect(function() cleaners[m] = nil end)
+	pr.Triggered:Connect(function(player)
+		if not m.Parent then return end
+		-- round 41: in the tutorial the story's mess is a little cleaning minigame (TutorialClient); it calls back
+		-- through Remotes.TutSkip("mess", model) and Mess.finish
+		if folder.Name == "Mess" and player:GetAttribute("InTutorial") then
+			Notify:FireClient(player, "messgame", { model = m, kind = kind })
+			return
+		end
+		clean(player)
 	end)
 	return m
+end
+
+-- round 41: the tutorial's cleaning minigame was won: clean that pile (it must be in the player's hotel and near them)
+function Mess.finish(player, m)
+	local clean = cleaners[m]
+	local plot = workspace:FindFirstChild("Plots") and workspace.Plots:FindFirstChild(player:GetAttribute("Plot") or "")
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not (clean and plot and m:IsDescendantOf(plot) and m.PrimaryPart and root) then return end
+	if (m.PrimaryPart.Position - root.Position).Magnitude > 30 then return end
+	clean(player)
 end
 
 function Mess.spawn(plot)

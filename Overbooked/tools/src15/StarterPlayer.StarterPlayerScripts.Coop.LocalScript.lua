@@ -332,6 +332,32 @@ do
 	local B = column(root, UDim2.fromOffset(346, 0), UDim2.new(1, -722, 0, 0))
 	local Rv = column(root, UDim2.new(1, -360, 0, 0), UDim2.new(0, 360, 0, 0))
 
+	-- round 41: open or closed. A closed hotel takes no new guests (the ones staying finish their stay)
+	local oc = block(A, 92, 0)
+	local ocTile = UI.new("Frame", { Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 14, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundColor3 = T.green, Parent = oc })
+	UI.corner(ocTile, 16)
+	UI.gloss(ocTile, 16, 0.35)
+	UI.icon(ocTile, ICON.door or ICON.hotel, 44, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+	local ocTitle = UI.label(oc, "OPEN", 24, { FontFace = UI.F.black, TextColor3 = T.greenDk, Position = UDim2.fromOffset(86, 16), Size = UDim2.new(1, -96, 0, 28) })
+	local ocLine = UI.label(oc, "Guests are welcome", 15, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(86, 48), Size = UDim2.new(1, -200, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd })
+	local ocBtn, ocText = UI.button(oc, {
+		text = "Close", kind = "red", size = UDim2.fromOffset(104, 44), pos = UDim2.new(1, -14, 0.5, 0), anchor = Vector2.new(1, 0.5), textSize = 17, radius = 12,
+		onClick = function()
+			local h = workHotel()
+			if h then Coop:FireServer("closed", not h:GetAttribute("Closed")) end
+		end,
+	})
+	local function refreshOpen(h)
+		local closed = h:GetAttribute("Closed") == true
+		ocTile.BackgroundColor3 = closed and T.red or T.green
+		ocTitle.Text = closed and "CLOSED" or "OPEN"
+		ocTitle.TextColor3 = closed and T.redDk or T.greenDk
+		ocLine.Text = closed and "No new guests are let in" or "Guests are welcome"
+		ocText.Text = closed and "Open" or "Close"
+		UI.setKind(ocBtn, closed and "green" or "red")
+		ocBtn.Visible = h:GetAttribute("Owner") == player.UserId
+	end
+
 	-- A: who you are. Name, rating, level, grade
 	local me = block(A, 176, 1)
 	caps(me, "Your hotel", 0, { Position = UDim2.fromOffset(18, 16), Size = UDim2.fromOffset(200, 16) })
@@ -705,6 +731,7 @@ do
 		refreshLevel(h)
 		refreshReviews()
 		refreshGrade(h)
+		refreshOpen(h)
 	end
 end
 
@@ -1402,7 +1429,7 @@ dim.InputBegan:Connect(function(input)
 end)
 UIS.InputBegan:Connect(function(input, processed)
 	if processed or (input.KeyCode ~= Enum.KeyCode.M and input.KeyCode ~= Enum.KeyCode.DPadLeft) then return end
-	if player:GetAttribute("Building") or not player:GetAttribute("Slot") then return end
+	if player:GetAttribute("Building") or not player:GetAttribute("Slot") or (not open and UI.locked("hotel")) then return end
 	setOpen(not open)
 end)
 
@@ -1489,7 +1516,7 @@ player:GetAttributeChangedSignal("MenuWant"):Connect(function()
 		dockPress(want)
 		return
 	end
-	if player:GetAttribute("Building") or not player:GetAttribute("Slot") or not pages[want] then return end
+	if player:GetAttribute("Building") or not player:GetAttribute("Slot") or not pages[want] or UI.locked(want) then return end
 	if not (open and activeTab == want) then dockPress(want) end
 end)
 
@@ -1497,7 +1524,7 @@ end)
 UIS.InputBegan:Connect(function(input, processed)
 	local kc = input.KeyCode
 	if processed or (kc ~= Enum.KeyCode.T and kc ~= Enum.KeyCode.Y) then return end
-	if player:GetAttribute("Building") or not player:GetAttribute("Slot") then return end
+	if player:GetAttribute("Building") or not player:GetAttribute("Slot") or UI.locked(kc == Enum.KeyCode.T and "staff" or "achievements") then return end
 	dockPress(kc == Enum.KeyCode.T and "staff" or "achievements")
 end)
 

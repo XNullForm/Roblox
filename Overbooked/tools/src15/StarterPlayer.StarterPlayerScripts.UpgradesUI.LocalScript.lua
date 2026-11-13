@@ -167,9 +167,9 @@ do
 	UI.list(head, nil, 2)
 	UI.pad(head, 4, 2, 4, 2)
 	caps(head, "Hotel style")
-	text(head, "Free to change. Room floors: pick them per room in build mode.", 13, { FontFace = UI.F.body, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16), TextWrapped = true, AutomaticSize = Y })
+	text(head, "Free to change. Floors and the roof are picked in build mode now.", 13, { FontFace = UI.F.body, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16), TextWrapped = true, AutomaticSize = Y })
 	for gi, g in ipairs(U.STYLES) do
-		if g.key == "rooms" then continue end -- round 34: room floors live in build mode (per room)
+		if g.key ~= "walls" then continue end -- round 41: floors and the roof live in build mode (the tool bar)
 		local card = block(right, 0, 1 + gi)
 		card.Name = "Style_" .. g.key
 		UI.list(card, nil, 10)

@@ -87,56 +87,66 @@ local dGroup = UI.new("CanvasGroup", { Size = UDim2.fromScale(1, 1), BackgroundT
 local dSc = UI.scaleOf(dGroup)
 -- round 34: the chapter look: a white plate, the speaker's 3D icon (or your headshot) over its left edge, a coloured
 -- label over their name in dark ink
+-- round 41: remade. A dark glass panel; the speaker's portrait in a ring on its left edge; their name on a tab in their
+-- colour sticking up over the top; the line in big white type; mood and rating in the band along the bottom
+local INK = Color3.fromRGB(18, 28, 44)
 local dHolder = UI.new("Frame", { Name = "Holder", Size = UDim2.new(1, -40, 0, DH), Position = UDim2.fromOffset(40, 40), BackgroundTransparency = 1, Parent = dGroup })
-UI.shadow(dHolder, { drop = 8, transparency = 0.6, spread = 6 })
-local box = UI.new("Frame", { Name = "Box", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.white, ZIndex = 2, Parent = dHolder })
-UI.corner(box, 26)
-UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = box })
-UI.rim(box, Color3.fromRGB(232, 237, 244), 2.5)
-local who = UI.icon(dGroup, I.guest, 124, { Name = "Who", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(62, 72), BackgroundTransparency = 1, ZIndex = 8 })
-local plate = UI.new("Frame", { Name = "Plate", Size = UDim2.new(1, -150, 0, 50), Position = UDim2.fromOffset(66, 16), BackgroundTransparency = 1, ZIndex = 6, Parent = box })
-local subChip = UI.label(plate, "", 13, { Name = "Sub", FontFace = UI.F.black, TextColor3 = T.brand, Size = UDim2.new(1, 0, 0, 15), ZIndex = 7 })
-local nameLbl = UI.label(plate, "Guest", 26, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(0, 15), Size = UDim2.new(1, 0, 0, 32), ZIndex = 7, TextTruncate = Enum.TextTruncate.AtEnd })
+UI.shadow(dHolder, { drop = 8, transparency = 0.45, spread = 8 })
+local box = UI.new("Frame", { Name = "Box", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = dHolder })
+UI.corner(box, 24)
+UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(36, 50, 76), Color3.fromRGB(16, 24, 38)), Parent = box })
+local boxRim = UI.rim(box, T.violet, 3)
+local ring = UI.new("Frame", { Name = "Ring", Size = UDim2.fromOffset(116, 116), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(62, 96), BackgroundColor3 = Color3.fromRGB(236, 241, 248), ZIndex = 7, Parent = dGroup })
+UI.corner(ring, UDim.new(0.5, 0))
+local ringRim = UI.rim(ring, T.violet, 5)
+local who = UI.icon(dGroup, I.guest, 124, { Name = "Who", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(62, 96), BackgroundTransparency = 1, ZIndex = 8 })
+local plate = UI.new("Frame", { Name = "Plate", Size = UDim2.fromOffset(0, 42), AutomaticSize = Enum.AutomaticSize.X, Position = UDim2.fromOffset(86, -21), BackgroundColor3 = T.violet, ZIndex = 6, Parent = box })
+UI.corner(plate, 14)
+UI.gloss(plate, 14, 0.3)
+UI.new("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18), Parent = plate })
+local nameLbl = UI.label(plate, "Guest", 24, { FontFace = UI.F.black, TextColor3 = T.white, Size = UDim2.fromScale(0, 1), AutomaticSize = Enum.AutomaticSize.X, ZIndex = 7 })
+UI.textStroke(nameLbl, 2, 0.4, INK)
+local subChip = UI.label(box, "", 15, { Name = "Sub", FontFace = UI.F.black, TextColor3 = Color3.fromRGB(150, 170, 200), Position = UDim2.fromOffset(96, 28), Size = UDim2.new(1, -150, 0, 18), ZIndex = 7, TextTruncate = Enum.TextTruncate.AtEnd })
 
 -- what they say
-local lineLbl = UI.label(box, "", 25, {
-	FontFace = UI.F.heavy, TextColor3 = T.cream, Position = UDim2.fromOffset(66, 68), Size = UDim2.new(1, -100, 0, 74),
+local lineLbl = UI.label(box, "", 26, {
+	FontFace = UI.F.heavy, TextColor3 = T.white, Position = UDim2.fromOffset(96, 52), Size = UDim2.new(1, -140, 0, 86),
 	TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 5, RichText = true, LineHeight = 1.08,
 })
 -- the little "more" arrow when the line is done
-local nextArrow = UI.new("ImageLabel", { Image = I.down, ImageColor3 = T.brand, Size = UDim2.fromOffset(26, 26), Position = UDim2.new(1, -46, 1, -42), ZIndex = 6, ImageTransparency = 1, Parent = box })
+local nextArrow = UI.new("ImageLabel", { Image = I.down, ImageColor3 = T.sun, Size = UDim2.fromOffset(26, 26), Position = UDim2.new(1, -46, 1, -42), ZIndex = 6, ImageTransparency = 1, Parent = box })
 
 -- the bottom strip: mood meter, the rating they'd give / staff level and energy
-local strip = UI.new("Frame", { Name = "Strip", Size = UDim2.new(1, -100, 0, 34), Position = UDim2.new(0, 66, 1, -46), BackgroundTransparency = 1, ZIndex = 5, Parent = box })
+local strip = UI.new("Frame", { Name = "Strip", Size = UDim2.new(1, -130, 0, 34), Position = UDim2.new(0, 96, 1, -46), BackgroundTransparency = 1, ZIndex = 5, Parent = box })
 UI.list(strip, Enum.FillDirection.Horizontal, 14, nil, Enum.VerticalAlignment.Center)
 local moodBadge = UI.badge(strip, 30, T.green, I.happy, { LayoutOrder = 1, ZIndex = 6 })
 local moodCol = UI.new("Frame", { Size = UDim2.fromOffset(228, 34), BackgroundTransparency = 1, LayoutOrder = 2, ZIndex = 5, Parent = strip })
-local moodWord = UI.label(moodCol, "HAPPY", 14, { FontFace = UI.F.display, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 16), ZIndex = 6 })
-local track = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 12), Position = UDim2.fromOffset(0, 19), BackgroundColor3 = Color3.fromRGB(240, 242, 246), ZIndex = 6, Parent = moodCol })
+local moodWord = UI.label(moodCol, "HAPPY", 14, { FontFace = UI.F.display, TextColor3 = Color3.fromRGB(150, 170, 200), Size = UDim2.new(1, 0, 0, 16), ZIndex = 6 })
+local track = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 12), Position = UDim2.fromOffset(0, 19), BackgroundColor3 = Color3.fromRGB(44, 58, 84), ZIndex = 6, Parent = moodCol })
 UI.corner(track, 6)
-UI.rim(track, Color3.fromRGB(229, 233, 240), 1.5)
+UI.rim(track, Color3.fromRGB(60, 76, 104), 1.5)
 local fill = UI.new("Frame", { Size = UDim2.fromScale(0.6, 1), BackgroundColor3 = T.green, ZIndex = 7, Parent = track })
 UI.corner(fill, 6)
 UI.sheen(fill, 0.7)
 local knob = UI.new("Frame", { Size = UDim2.fromOffset(18, 18), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.6, 0.5), BackgroundColor3 = T.white, ZIndex = 8, Parent = track })
 UI.corner(knob, UDim.new(0.5, 0))
 local knobRim = UI.rim(knob, T.greenDk, 3)
-local sep = UI.new("Frame", { Size = UDim2.fromOffset(3, 26), BackgroundColor3 = Color3.fromRGB(237, 241, 246), LayoutOrder = 3, ZIndex = 5, Parent = strip })
+local sep = UI.new("Frame", { Size = UDim2.fromOffset(3, 26), BackgroundColor3 = Color3.fromRGB(52, 66, 92), LayoutOrder = 3, ZIndex = 5, Parent = strip })
 UI.corner(sep, 2)
 local rateCol = UI.new("Frame", { Size = UDim2.fromOffset(170, 34), BackgroundTransparency = 1, LayoutOrder = 4, ZIndex = 5, Parent = strip })
-local rateLbl = UI.label(rateCol, "WOULD RATE YOU", 13, { FontFace = UI.F.display, TextColor3 = T.muted, Size = UDim2.new(1, 0, 0, 15), ZIndex = 6 })
+local rateLbl = UI.label(rateCol, "WOULD RATE YOU", 13, { FontFace = UI.F.display, TextColor3 = Color3.fromRGB(150, 170, 200), Size = UDim2.new(1, 0, 0, 15), ZIndex = 6 })
 local starRow = UI.new("Frame", { Size = UDim2.fromOffset(150, 20), Position = UDim2.fromOffset(0, 16), BackgroundTransparency = 1, ZIndex = 6, Parent = rateCol })
 UI.list(starRow, Enum.FillDirection.Horizontal, 3)
 local stars = {}
 for i = 1, 5 do
 	stars[i] = UI.new("ImageLabel", { Image = UI.IMG.star, ImageColor3 = T.sun, Size = UDim2.fromOffset(20, 20), LayoutOrder = i, ZIndex = 7, Parent = starRow })
 end
-local energyBar = UI.new("Frame", { Size = UDim2.fromOffset(150, 12), Position = UDim2.fromOffset(0, 19), BackgroundColor3 = Color3.fromRGB(240, 242, 246), ZIndex = 6, Visible = false, Parent = rateCol })
+local energyBar = UI.new("Frame", { Size = UDim2.fromOffset(150, 12), Position = UDim2.fromOffset(0, 19), BackgroundColor3 = Color3.fromRGB(44, 58, 84), ZIndex = 6, Visible = false, Parent = rateCol })
 UI.corner(energyBar, 6)
 local energyFill = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.blue, ZIndex = 7, Parent = energyBar })
 UI.corner(energyFill, 6)
 UI.sheen(energyFill, 0.7)
-local infoLbl = UI.label(strip, "", 14, { FontFace = UI.F.bold, TextColor3 = T.muted, Size = UDim2.fromOffset(220, 34), LayoutOrder = 5, ZIndex = 6, TextWrapped = true, TextTruncate = Enum.TextTruncate.AtEnd })
+local infoLbl = UI.label(strip, "", 14, { FontFace = UI.F.bold, TextColor3 = Color3.fromRGB(170, 186, 210), Size = UDim2.fromOffset(220, 34), LayoutOrder = 5, ZIndex = 6, TextWrapped = true, TextTruncate = Enum.TextTruncate.AtEnd })
 
 ---------------------------------------------------------------- the replies (right side)
 
@@ -197,7 +207,10 @@ end
 local function setPlate(name, sub, col, img)
 	nameLbl.Text = name
 	subChip.Text = sub or ""
-	subChip.TextColor3 = UI.shade(col, -0.18)
+	plate.BackgroundColor3 = col
+	ringRim.Color = col
+	boxRim.Color = col
+	UI.pop(plate, 0.85, 0.25)
 	who.Image = img or I.guest
 	local head = who.Image:find("rbxthumb", 1, true) ~= nil -- your headshot fills its square; the 3D icons are padded
 	who.Size = UDim2.fromOffset(head and 84 or 124, head and 84 or 124)
@@ -299,7 +312,7 @@ local function setMood(info, animate)
 	UI.tween(knob, t, { Position = UDim2.fromScale(k, 0.5) }, Enum.EasingStyle.Back)
 	UI.tween(knobRim, t, { Color = UI.shade(col, -0.4) })
 	moodWord.Text = string.upper(info.staff and ("MORALE  -  " .. (info.moodWord or "")) or ("MOOD  -  " .. (info.moodWord or "")))
-	moodWord.TextColor3 = UI.shade(col, -0.45)
+	moodWord.TextColor3 = col
 	local img, bc = moodFace(m)
 	local ic = moodBadge:FindFirstChild("Icon", true) or moodBadge:FindFirstChildWhichIsA("ImageLabel", true)
 	if ic then ic.Image = img end
@@ -320,7 +333,7 @@ local function setMood(info, animate)
 		local n = info.stars or 3
 		for i = 1, 5 do
 			stars[i].Image = i <= n and UI.IMG.star or UI.IMG.starLine
-			stars[i].ImageColor3 = i <= n and T.sun or Color3.fromRGB(220, 224, 230)
+			stars[i].ImageColor3 = i <= n and T.sun or Color3.fromRGB(70, 84, 108)
 		end
 	end
 	local extra = info.staff and (info.review or "") or (info.want and ("Wants " .. info.want) or (info.feel and "" or (info.doing or "")))
@@ -345,13 +358,13 @@ local function optionButton(o, i, n)
 	local isTopic = o.kind == "topic"
 	local topic = false -- round 34: every reply is a white plate; topics get an accent stripe
 	local b = UI.new("TextButton", { Name = "Opt" .. i, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(384, 52), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = oList })
-	local lip = UI.new("Frame", { Size = UDim2.new(1, -8, 1, -6), Position = UDim2.fromOffset(8, 6), BackgroundColor3 = topic and deep or Color3.fromRGB(221, 229, 240), ZIndex = 3, Parent = b })
+	local lip = UI.new("Frame", { Size = UDim2.new(1, -8, 1, -6), Position = UDim2.fromOffset(8, 6), BackgroundColor3 = topic and deep or Color3.fromRGB(6, 12, 22), ZIndex = 3, Parent = b })
 	UI.corner(lip, 18)
-	local face = UI.new("Frame", { Name = "Face", Size = UDim2.new(1, -8, 1, -6), Position = UDim2.fromOffset(8, 0), BackgroundColor3 = topic and col or T.white, ZIndex = 4, Parent = b })
+	local face = UI.new("Frame", { Name = "Face", Size = UDim2.new(1, -8, 1, -6), Position = UDim2.fromOffset(8, 0), BackgroundColor3 = topic and col or Color3.new(1, 1, 1), ZIndex = 4, Parent = b })
 	UI.corner(face, 18)
-	if topic then UI.sheen(face) else UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(247, 249, 252)), Parent = face }) end
-	local rim = UI.rim(face, topic and deep or Color3.fromRGB(225, 233, 244), 2.5)
-	UI.gloss(face, 18, topic and 0.4 or 0.25)
+	if topic then UI.sheen(face) else UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(40, 56, 84), Color3.fromRGB(20, 30, 48)), Parent = face }) end
+	local rim = UI.rim(face, topic and deep or Color3.fromRGB(64, 80, 110), 2.5)
+	UI.gloss(face, 18, topic and 0.4 or 0.08)
 	local playShine = UI.shine(face, 18)
 	-- the key number
 	local cap = UI.new("TextLabel", { Name = "Key", Text = tostring(i), TextSize = 17, FontFace = UI.F.display, TextColor3 = topic and deep or T.white,
@@ -360,8 +373,8 @@ local function optionButton(o, i, n)
 	UI.sheen(cap, 0.5)
 	UI.rim(cap, topic and UI.shade(col, -0.2) or deep, 2)
 	cap.Visible = not (UIS.TouchEnabled and not UIS.KeyboardEnabled)
-	local lbl = UI.label(face, o.text, 19, {
-		FontFace = UI.F.display, TextColor3 = topic and T.white or T.cream, Position = UDim2.fromOffset(cap.Visible and 54 or 18, 0), Size = UDim2.new(1, -(cap.Visible and 54 or 18) - 52, 1, 0),
+	local lbl = UI.label(face, o.text, 20, {
+		FontFace = UI.F.display, TextColor3 = T.white, Position = UDim2.fromOffset(cap.Visible and 54 or 18, 0), Size = UDim2.new(1, -(cap.Visible and 54 or 18) - 52, 1, 0),
 		TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
 	})
 	if topic then UI.textStroke(lbl, 2, 0.1, deep) end
@@ -382,7 +395,7 @@ local function optionButton(o, i, n)
 	b.MouseLeave:Connect(function()
 		UI.tween(face, 0.2, { Position = UDim2.fromOffset(8, 0) }, Enum.EasingStyle.Quint)
 		UI.tween(lip, 0.2, { Position = UDim2.fromOffset(8, 6) }, Enum.EasingStyle.Quint)
-		UI.tween(rim, 0.2, { Color = topic and deep or Color3.fromRGB(225, 233, 244) })
+		UI.tween(rim, 0.2, { Color = topic and deep or Color3.fromRGB(64, 80, 110) })
 	end)
 	b.MouseButton1Down:Connect(function() if not busy then UI.tween(face, 0.06, { Position = UDim2.fromOffset(-2, 4) }) end end)
 	b.Activated:Connect(function() choose(i) end)

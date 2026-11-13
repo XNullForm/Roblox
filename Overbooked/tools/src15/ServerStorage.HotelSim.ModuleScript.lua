@@ -5244,6 +5244,8 @@ local handle = { hotel = HOTEL }
 local lastWalkIn = 0
 function handle.wantsWalkIn()
 	if not running or #members() == 0 then return false end
+	-- round 41: a closed hotel (Hotel page) and a first tutorial still waiting to meet its first guest take nobody in
+	if HOTEL:GetAttribute("Closed") or HOTEL:GetAttribute("GuestsHeld") then return false end
 	-- round 10d: at a low level, longer gaps, a shorter line and fewer guests at once
 	local k = growth()
 	local gap = (C.WALKIN_GAP or 4) + (1 - k) * 14 -- 18 s at level 1, 4 s from level 7

@@ -72,14 +72,14 @@ end
 local STEPS = {
 	{
 		icon = "hotel", title = "Welcome to your hotel!",
-		body = "You're the new owner. Let's learn the ropes: serving guests, keeping rooms clean and building.",
+		body = "You're the new owner. Let's learn the ropes: serving guests, keeping rooms clean and building. New buttons unlock as you go.",
 		button = "Let's go",
 	},
 	{
 		-- round 35: the story start: Aunt Marigold left rubbish all over the lobby (ServerStorage.Mess)
 		icon = "clean", title = "Clean up the mess",
-		body = "Aunt Marigold left the place in a state. Hold E on each pile of rubbish to clean it up. Nobody books a tip!",
-		bodyTouch = "Aunt Marigold left the place in a state. Hold the button on each pile of rubbish to clean it up.",
+		body = "Aunt Marigold left the place in a state. Press E at each pile of rubbish, then rub it clean. Nobody books a tip!",
+		bodyTouch = "Aunt Marigold left the place in a state. Tap each pile of rubbish, then rub it clean.",
 		target = function()
 			local h, r = hotel(), root()
 			local best, bd
@@ -103,7 +103,7 @@ local STEPS = {
 	},
 	{
 		-- round 22: the hotel starts empty, so the first job is a room guests can sleep in
-		icon = "bed", title = "Open your first room",
+		icon = "bed", title = "Open your first room", unlock = { "build" },
 		body = "Press B to build. Put a Bed, a Shower and a Toilet in one of the rooms at the back. A room opens as soon as it has all three.",
 		bodyTouch = "Tap the hammer button to build. Put a Bed, a Shower and a Toilet in one of the rooms at the back.",
 		done = function()
@@ -138,8 +138,9 @@ local STEPS = {
 		done = seatedAtDesk,
 	},
 	{
-		icon = "guest", title = "Check in a guest",
-		body = "When a guest reaches the desk, press their Check In button and finish the check-in.",
+		-- round 41: the hotel only takes guests from here on (the server holds them back until "guests")
+		icon = "guest", title = "Wait for your first guest",
+		body = "Your hotel is open! Stay at the desk. When your first guest walks up, press their Check In button.",
 		target = function()
 			for _, pr in ipairs(CollectionService:GetTagged("DeskPrompt")) do
 				local h = hotel()
@@ -150,6 +151,7 @@ local STEPS = {
 		begin = function()
 			local h = hotel()
 			mark.busy = h and h:GetAttribute("RoomsBusy") or 0
+			TutSkip:FireServer("guests")
 		end,
 		done = function()
 			local h = hotel()
@@ -159,11 +161,13 @@ local STEPS = {
 		waiting = function()
 			local h = hotel()
 			if not seatedAtDesk() then return "Sit back down at the desk to serve the next guest." end
-			return nil
+			local gs = h and h:FindFirstChild("Guests")
+			if gs and #gs:GetChildren() > 0 then return nil end
+			return "Your first guest is on the way..."
 		end,
 	},
 	{
-		icon = "chat", title = "Say hello",
+		icon = "chat", title = "Say hello", unlock = { "hotel" },
 		body = "Walk up to any guest and press F to talk. What you say changes how they feel about your hotel.",
 		bodyTouch = "Walk up to any guest and tap Talk. What you say changes how they feel about your hotel.",
 		target = function() return nearestPrompt(function(p) return p.ActionText == "Talk" and p.Enabled end) end,
@@ -253,7 +257,7 @@ local STEPS = {
 	},
 	{
 		-- round 14: pick your first hire from the candidates
-		icon = "guest", title = "Hire your first staff member",
+		icon = "guest", title = "Hire your first staff member", unlock = { "staff" },
 		body = "Press T (Staff) and pick someone. Every candidate has a skill, a pro and a con. A receptionist is a great first hire.",
 		bodyTouch = "Tap STAFF and pick someone. Every candidate has a skill, a pro and a con.",
 		begin = function()
@@ -275,8 +279,8 @@ local STEPS = {
 		end,
 	},
 	{
-		icon = "star", title = "You're all set!",
-		body = "Serve the desk, keep rooms clean and build your dream hotel. Here's $500 to get you started.",
+		icon = "star", title = "You're all set!", unlock = { "research", "upgrades", "achievements" },
+		body = "Research, Upgrades and Awards are unlocked too. Serve the desk, keep rooms clean and build your dream hotel. Here's $500!",
 		button = "Start my day", final = true,
 	},
 }
@@ -284,7 +288,7 @@ local STEPS = {
 ---------------------------------------------------------------- the coach card
 
 local gui = UI.new("ScreenGui", { Name = "Tutorial", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 12, Enabled = false, Parent = pgui })
-local W, H = 560, 150
+local W, H = 660, 188
 local wrap = UI.new("Frame", { Name = "Coach", Size = UDim2.fromOffset(W, H), Position = UDim2.new(0.5, 0, 0, 120), AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Parent = gui })
 local wrapScale = UI.new("UIScale", { Name = "Fit", Parent = wrap })
 local card = UI.new("CanvasGroup", { Name = "Card", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.paper or T.ink, Parent = wrap })
@@ -299,23 +303,23 @@ UI.grad(sweep, Color3.new(1, 1, 1), Color3.new(1, 1, 1), 0).Transparency = Numbe
 })
 
 -- the icon disc with a progress ring round it
-local disc = UI.new("Frame", { Size = UDim2.fromOffset(84, 84), Position = UDim2.fromOffset(22, 22), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card })
-UI.corner(disc, 42)
+local disc = UI.new("Frame", { Size = UDim2.fromOffset(96, 96), Position = UDim2.fromOffset(20, 24), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card })
+UI.corner(disc, 48)
 local discG = UI.grad(disc, Color3.fromRGB(238, 245, 255), Color3.fromRGB(210, 228, 252), 90)
 UI.stroke(disc, 2, Color3.fromRGB(196, 216, 244), 0)
-local discIcon = UI.icon(disc, ICON.bell, 52, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+local discIcon = UI.icon(disc, ICON.bell, 62, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
 local check = UI.icon(disc, ICON.checkmark, 56, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ImageTransparency = 1 })
 
-local stepTag = UI.label(card, "STEP 1 OF 10", 13, { FontFace = UI.F.black, TextColor3 = T.gold, Position = UDim2.fromOffset(124, 18), Size = UDim2.new(1, -260, 0, 16) })
-local title = UI.label(card, "", 24, { FontFace = UI.F.black, Position = UDim2.fromOffset(124, 36), Size = UDim2.new(1, -146, 0, 28), TextTruncate = Enum.TextTruncate.AtEnd })
-local body = UI.label(card, "", 15, {
-	FontFace = UI.F.body, TextColor3 = T.muted, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top,
-	Position = UDim2.fromOffset(124, 68), Size = UDim2.new(1, -146, 0, 40),
+local stepTag = UI.label(card, "STEP 1 OF 10", 15, { FontFace = UI.F.black, TextColor3 = T.gold, Position = UDim2.fromOffset(134, 16), Size = UDim2.new(1, -260, 0, 18) })
+local title = UI.label(card, "", 28, { FontFace = UI.F.black, Position = UDim2.fromOffset(134, 34), Size = UDim2.new(1, -186, 0, 32), TextTruncate = Enum.TextTruncate.AtEnd })
+local body = UI.label(card, "", 19, {
+	FontFace = UI.F.bold, TextColor3 = Color3.fromRGB(62, 70, 86), TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top,
+	Position = UDim2.fromOffset(134, 70), Size = UDim2.new(1, -156, 0, 56),
 })
-local waitLine = UI.label(card, "", 13, { FontFace = UI.F.heavy, TextColor3 = T.gold, Position = UDim2.fromOffset(124, 112), Size = UDim2.new(1, -330, 0, 18), TextTransparency = 1, TextTruncate = Enum.TextTruncate.AtEnd })
+local waitLine = UI.label(card, "", 16, { FontFace = UI.F.heavy, TextColor3 = T.gold, Position = UDim2.fromOffset(134, 134), Size = UDim2.new(1, -330, 0, 20), TextTransparency = 1, TextTruncate = Enum.TextTruncate.AtEnd })
 
 -- progress pips along the bottom
-local pips = UI.new("Frame", { Size = UDim2.new(1, -330, 0, 6), Position = UDim2.fromOffset(124, 134), BackgroundTransparency = 1, Parent = card })
+local pips = UI.new("Frame", { Size = UDim2.new(1, -330, 0, 8), Position = UDim2.fromOffset(134, 164), BackgroundTransparency = 1, Parent = card })
 UI.list(pips, Enum.FillDirection.Horizontal, 4)
 local pipList = {}
 for i = 1, #STEPS do
@@ -325,21 +329,27 @@ for i = 1, #STEPS do
 end
 
 -- buttons: the main one (info steps), Skip step (after a few seconds) and the close X (skip the tutorial)
-local nextBtn = UI.button(card, { text = "Next", kind = "gold", size = UDim2.fromOffset(150, 44), pos = UDim2.new(1, -18, 1, -16), anchor = Vector2.new(1, 1), textSize = 18, radius = 12 })
+local nextBtn = UI.button(card, { text = "Next", kind = "gold", size = UDim2.fromOffset(170, 48), pos = UDim2.new(1, -18, 1, -14), anchor = Vector2.new(1, 1), textSize = 20, radius = 12 })
 local skipBtn = UI.button(card, { text = "Skip step", kind = "ghost", size = UDim2.fromOffset(120, 34), pos = UDim2.new(1, -18, 1, -16), anchor = Vector2.new(1, 1), textSize = 14, radius = 10 })
-local closeBtn = UI.new("TextButton", { Text = "", Size = UDim2.fromOffset(30, 30), Position = UDim2.new(1, -12, 0, 12), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = T.ink2, Parent = card })
-UI.corner(closeBtn, 15)
+local closeBtn = UI.new("TextButton", { Text = "", Size = UDim2.fromOffset(36, 36), Position = UDim2.new(1, -12, 0, 12), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = T.ink2, Parent = card })
+UI.corner(closeBtn, 18)
+UI.tooltip(closeBtn, "Skip the tutorial")
 UI.stroke(closeBtn, 1.5, T.line, 0.3)
 UI.icon(closeBtn, ICON.close, 16, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
 UI.animate(closeBtn)
 
 -- "Skip the tutorial?" confirm strip
-local confirm = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 52), Position = UDim2.new(0, 0, 1, 10), BackgroundColor3 = T.ink, Visible = false, Parent = wrap })
-UI.corner(confirm, 14)
-UI.stroke(confirm, 1.5, T.red, 0.3)
-UI.label(confirm, "Skip the tutorial? You can replay it from Settings.", 15, { FontFace = UI.F.bold, Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -230, 1, 0), TextWrapped = true })
-local yesBtn = UI.button(confirm, { text = "Skip", kind = "red", size = UDim2.fromOffset(90, 36), pos = UDim2.new(1, -110, 0.5, -2), anchor = Vector2.new(1, 0.5), textSize = 15, radius = 10 })
-local noBtn = UI.button(confirm, { text = "Keep going", kind = "ghost", size = UDim2.fromOffset(110, 36), pos = UDim2.new(1, -10, 0.5, -2), anchor = Vector2.new(1, 0.5), textSize = 14, radius = 10 })
+local confirm = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), Visible = false, ZIndex = 20, Parent = wrap })
+UI.corner(confirm, 20)
+UI.stroke(confirm, 3, T.red, 0).Thickness = 3
+UI.label(confirm, "Skip the tutorial?", 28, { FontFace = UI.F.black, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 32), ZIndex = 21 })
+UI.label(confirm, "You can replay it any time from Settings.", 18, { FontFace = UI.F.bold, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 62), Size = UDim2.new(1, 0, 0, 22), ZIndex = 21 })
+local yesBtn = UI.button(confirm, { text = "Skip it", kind = "red", size = UDim2.fromOffset(170, 50), pos = UDim2.new(0.5, -8, 1, -22), anchor = Vector2.new(1, 1), textSize = 19, radius = 12 })
+local noBtn = UI.button(confirm, { text = "Keep going", kind = "green", size = UDim2.fromOffset(170, 50), pos = UDim2.new(0.5, 8, 1, -22), anchor = Vector2.new(0, 1), textSize = 19, radius = 12 })
+for _, b in ipairs({ yesBtn, noBtn }) do
+	b.ZIndex = 22
+	for _, d in ipairs(b:GetDescendants()) do if d:IsA("GuiObject") then d.ZIndex += 21 end end
+end
 
 ---------------------------------------------------------------- the beacon: a marker over the goal, a ring on the floor, an edge arrow
 
@@ -389,7 +399,7 @@ local function layout()
 	local vp = workspace.CurrentCamera.ViewportSize
 	local k = math.clamp(math.min(vp.X / 1500, vp.Y / 860), TOUCH and 0.5 or 0.62, 1.1)
 	if TOUCH then k = math.min(k, (vp.X - 24) / W) end
-	wrapScale.Scale = k * 0.85 -- round 32: a little smaller
+	wrapScale.Scale = k -- round 41: full size again, the words were too small
 	-- under the top bar (phones publish where it ends); near the top while building (the HUD steps aside)
 	local y = 112
 	local hud = pgui:FindFirstChild("HUD")
@@ -414,10 +424,28 @@ local function textFor(s)
 	return (TOUCH and s.bodyTouch) or s.body
 end
 
+-- round 41: the pages unlock step by step (UI.locked reads player attribute TutLock); a replay keeps them open
+local LOCKABLE = { "build", "hotel", "staff", "research", "upgrades", "achievements" }
+local lockOn = false
+local function applyLocks(i)
+	if not lockOn then player:SetAttribute("TutLock", nil) return end
+	local open = {}
+	for k = 1, i do for _, id in ipairs(STEPS[k].unlock or {}) do open[id] = true end end
+	local list = {}
+	for _, id in ipairs(LOCKABLE) do if not open[id] then table.insert(list, id) end end
+	local was = player:GetAttribute("TutLock")
+	local now = #list > 0 and ("," .. table.concat(list, ",") .. ",") or nil
+	player:SetAttribute("TutLock", now)
+	if was and i > 1 and STEPS[i].unlock then
+		UI.toast("Unlocked: " .. table.concat(STEPS[i].unlock, ", "):gsub("achievements", "awards"):gsub("^%l", string.upper), "star", "good")
+	end
+end
+
 local function showStep(i)
 	local s = STEPS[i]
 	index, stepT = i, 0
 	mark = {}
+	applyLocks(i)
 	if s.begin then s.begin() end
 	stepTag.Text = "STEP " .. i .. " OF " .. #STEPS
 	discIcon.Image = ICON[s.icon] or ICON.star
@@ -479,6 +507,8 @@ end
 local function finish(skipped)
 	running = false
 	stopBeacon()
+	lockOn = false
+	applyLocks(#STEPS)
 	if not skipped then TutSkip:FireServer("done") else TutSkip:FireServer("skip") end
 	UI.tween(card, 0.3, { GroupTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	UI.tween(UI.scaleOf(wrap), 0.3, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -535,8 +565,9 @@ end)
 yesBtn.Activated:Connect(function() if running then finish(true) end end)
 noBtn.Activated:Connect(function() confirm.Visible = false end)
 
-local function start()
+local function start(replay)
 	if running then return end
+	lockOn = not replay
 	running = true
 	finishing = false
 	gui.Enabled = true
@@ -556,7 +587,7 @@ RunService.RenderStepped:Connect(function(dt)
 	if not running then return end
 	layout()
 	-- a full-screen minigame or the menu window covers the card; the title screen hides it too
-	local busy = pgui:FindFirstChild("Minigame") ~= nil or player:GetAttribute("MenuOpen") == true or not player:GetAttribute("Slot")
+	local busy = pgui:FindFirstChild("Minigame") ~= nil or pgui:FindFirstChild("MessGame") ~= nil or player:GetAttribute("MenuOpen") == true or not player:GetAttribute("Slot")
 	wrap.Visible = not busy
 	stepT += dt
 	local s = STEPS[index]
@@ -631,14 +662,178 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 end)
 
+
+---------------------------------------------------------------- round 41: the tutorial's cleaning minigame
+-- In the tutorial, each pile of Aunt Marigold's mess opens a quick rub-it-clean game (Mess sends Notify "messgame"
+-- { model, kind }). Hold and rub over the grime until it's all gone; winning tells the server to clear the pile
+-- (Remotes.TutSkip("mess", model)). Player attribute TestMG = "win" finishes it at once (Studio tests).
+local MESS = {
+	bag = { "Bag the rubbish", "Hold and rub over the rubbish to scoop it up", Color3.fromRGB(58, 62, 72), "blob", 5 },
+	dust = { "Sweep the dust", "Hold and rub to sweep the dust away", Color3.fromRGB(150, 128, 98), "blob", 9 },
+	papers = { "Pick up the papers", "Hold and rub over the papers to gather them", Color3.fromRGB(240, 234, 216), "sheet", 7 },
+	planks = { "Clear the planks", "Hold and rub over the planks to stack them away", Color3.fromRGB(150, 104, 60), "plank", 4 },
+	puddle = { "Mop the puddle", "Hold and rub to mop it dry", Color3.fromRGB(96, 156, 226), "blob", 5 },
+}
+local messOpen = false
+local function messGame(model, kind)
+	if messOpen or not (model and model.Parent) then return end
+	local def = MESS[kind] or MESS.dust
+	messOpen = true
+	local g = UI.new("ScreenGui", { Name = "MessGame", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 60, Parent = pgui })
+	local dim = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, Parent = g })
+	UI.tween(dim, 0.25, { BackgroundTransparency = 0.45 })
+	local wrapM = UI.new("Frame", { Size = UDim2.fromOffset(600, 470), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = g })
+	UI.autoScale(wrapM)
+	local cardM = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), Parent = wrapM })
+	UI.corner(cardM, 24)
+	UI.grad(cardM, Color3.new(1, 1, 1), Color3.fromRGB(232, 240, 252), 90)
+	UI.stroke(cardM, 3, T.brand, 0).Thickness = 3
+	UI.icon(cardM, ICON.clean, 56, { Position = UDim2.fromOffset(20, 14) })
+	UI.label(cardM, def[1], 28, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(88, 14), Size = UDim2.new(1, -150, 0, 32) })
+	UI.label(cardM, def[2], 18, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(88, 48), Size = UDim2.new(1, -150, 0, 22) })
+	local x = UI.new("TextButton", { Text = "", Size = UDim2.fromOffset(40, 40), Position = UDim2.new(1, -16, 0, 16), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = T.ink2, Parent = cardM })
+	UI.corner(x, 20)
+	UI.icon(x, ICON.close, 20, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+	-- the floor: a tiled board the mess lies on
+	local area = UI.new("Frame", { Name = "Floor", Size = UDim2.new(1, -40, 0, 320), Position = UDim2.fromOffset(20, 86), BackgroundColor3 = Color3.fromRGB(214, 196, 168), ClipsDescendants = true, Parent = cardM })
+	UI.corner(area, 16)
+	for i = 0, 7 do
+		for j = 0, 4 do
+			if (i + j) % 2 == 0 then
+				UI.new("Frame", { Size = UDim2.fromScale(1 / 8, 1 / 5), Position = UDim2.fromScale(i / 8, j / 5), BackgroundColor3 = Color3.fromRGB(198, 178, 148), BorderSizePixel = 0, Parent = area })
+			end
+		end
+	end
+	local barT = UI.new("Frame", { Size = UDim2.new(1, -40, 0, 18), Position = UDim2.new(0, 20, 1, -40), BackgroundColor3 = T.ink2, Parent = cardM })
+	UI.corner(barT, 9)
+	local barF = UI.new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.new(1, 1, 1), Parent = barT })
+	UI.corner(barF, 9)
+	UI.grad(barF, T.green, T.greenDk, 90)
+	local barL = UI.label(barT, "", 14, { FontFace = UI.F.black, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 3 })
+	UI.textStroke(barL, 1.5, 0.3)
+	-- the mess
+	local rngM = Random.new()
+	local blobs = {}
+	for i = 1, def[5] do
+		local sz = def[4] == "plank" and Vector2.new(rngM:NextInteger(150, 210), 34) or def[4] == "sheet" and Vector2.new(70, 90)
+			or Vector2.new(rngM:NextInteger(kind == "puddle" and 90 or 54, kind == "puddle" and 140 or 92), 0)
+		if sz.Y == 0 then sz = Vector2.new(sz.X, sz.X * rngM:NextNumber(0.7, 1)) end
+		local b = UI.new("Frame", {
+			Size = UDim2.fromOffset(sz.X, sz.Y), AnchorPoint = Vector2.new(0.5, 0.5), Rotation = rngM:NextNumber(-40, 40),
+			Position = UDim2.fromScale(rngM:NextNumber(0.14, 0.86), rngM:NextNumber(0.18, 0.82)), BackgroundColor3 = def[3], ZIndex = 3, Parent = area,
+		})
+		UI.corner(b, def[4] == "blob" and math.floor(sz.Y / 2) or 6)
+		UI.stroke(b, 2, UI.shade(def[3], -0.3), 0.2)
+		UI.grad(b, Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190), 90)
+		if kind == "bag" then -- a knotted top
+			local knot = UI.new("Frame", { Size = UDim2.fromOffset(16, 12), Position = UDim2.new(0.5, 0, 0, -4), AnchorPoint = Vector2.new(0.5, 0), BackgroundColor3 = UI.shade(def[3], 0.25), ZIndex = 4, Parent = b })
+			UI.corner(knot, 5)
+		end
+		local shineB = UI.new("Frame", { Size = UDim2.fromScale(0.35, 0.18), Position = UDim2.fromScale(0.22, 0.16), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.7, ZIndex = 4, Parent = b })
+		UI.corner(shineB, 6)
+		if def[4] == "sheet" then
+			for k = 1, 4 do UI.new("Frame", { Size = UDim2.new(0.7, 0, 0, 3), Position = UDim2.fromScale(0.15, 0.15 + k * 0.15), BackgroundColor3 = Color3.fromRGB(150, 150, 160), BorderSizePixel = 0, ZIndex = 4, Parent = b }) end
+		elseif def[4] == "plank" then
+			UI.new("Frame", { Size = UDim2.new(1, -16, 0, 3), Position = UDim2.new(0, 8, 0.5, -1), BackgroundColor3 = UI.shade(def[3], -0.25), BorderSizePixel = 0, ZIndex = 4, Parent = b })
+		end
+		table.insert(blobs, { f = b, life = 1, size = sz })
+	end
+	local total, gone, won, closed = #blobs, 0, false, false
+	-- the sponge follows the pointer
+	local sponge = UI.icon(g, ICON.clean, 64, { AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 20, Visible = false })
+	local held, last = false, nil
+	local conns = {}
+	local function close(win)
+		if closed then return end
+		closed = true
+		for _, c in ipairs(conns) do c:Disconnect() end
+		UIS.MouseIconEnabled = true
+		if win then TutSkip:FireServer("mess", model) end
+		UI.tween(dim, 0.25, { BackgroundTransparency = 1 })
+		UI.close(cardM, function() g:Destroy() messOpen = false end)
+	end
+	local function progress()
+		barL.Text = gone .. " / " .. total
+		UI.tween(barF, 0.25, { Size = UDim2.fromScale(gone / total, 1) }, Enum.EasingStyle.Quint)
+		if gone >= total and not won then
+			won = true
+			UI.sound("Fixed")
+			local big = UI.label(area, "Spotless!", 54, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(400, 64), ZIndex = 10 })
+			UI.textStroke(big, 4, 0, T.greenDk)
+			UI.pop(big, 0.3, 0.45)
+			UI.sparkles(area, 14, T.sun, 1)
+			task.delay(1.0, function() close(true) end)
+		end
+	end
+	progress()
+	x.Activated:Connect(function() UI.sound("Click") close(false) end)
+	table.insert(conns, UIS.InputBegan:Connect(function(io)
+		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then held = true last = nil end
+	end))
+	table.insert(conns, UIS.InputEnded:Connect(function(io)
+		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then held = false end
+	end))
+	local scrubT = 0
+	table.insert(conns, RunService.RenderStepped:Connect(function(dt)
+		if won or closed then return end
+		if player:GetAttribute("TestMG") == "win" then
+			player:SetAttribute("TestMG", nil)
+			for _, b in ipairs(blobs) do if b.life > 0 then b.life = 0 b.f:Destroy() gone += 1 end end
+			progress()
+			return
+		end
+		local p = UIS:GetMouseLocation()
+		local a0, as = area.AbsolutePosition, area.AbsoluteSize
+		local inside = p.X > a0.X and p.Y > a0.Y and p.X < a0.X + as.X and p.Y < a0.Y + as.Y
+		sponge.Visible = inside
+		UIS.MouseIconEnabled = not inside
+		sponge.Position = UDim2.fromOffset(p.X, p.Y)
+		sponge.Rotation = held and math.sin(os.clock() * 30) * 14 or 0
+		local moved = last and (p - last).Magnitude or 0
+		last = p
+		if not (held and inside and moved > 0) then return end
+		local k = wrapM.AutoScale.Scale
+		for _, b in ipairs(blobs) do
+			if b.life > 0 then
+				local c = b.f.AbsolutePosition + b.f.AbsoluteSize / 2
+				local r = math.max(b.f.AbsoluteSize.X, b.f.AbsoluteSize.Y) / 2 + 26 * k
+				if (p - c).Magnitude < r then
+					b.life -= moved / (120 * k)
+					b.f.BackgroundTransparency = 1 - math.max(b.life, 0) * 0.9 - 0.1
+					local s = 0.55 + 0.45 * math.max(b.life, 0)
+					b.f.Size = UDim2.fromOffset(b.size.X * s, b.size.Y * s)
+					scrubT += dt
+					if scrubT > 0.12 then scrubT = 0 UI.sound("Tick") end
+					if b.life <= 0 then
+						gone += 1
+						local at = b.f.Position
+						b.f:Destroy()
+						local spark = UI.new("Frame", { Size = UDim2.fromOffset(10, 10), Position = at, AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Parent = area })
+						UI.sparkles(spark, 8, Color3.new(1, 1, 1), 1)
+						task.delay(1, function() spark:Destroy() end)
+						UI.sound("Coins")
+						progress()
+					end
+				end
+			end
+		end
+	end))
+	UI.open(cardM, { from = 0.8 })
+	UI.sound("Open")
+end
+
 Notify.OnClientEvent:Connect(function(kind, d)
+	if kind == "messgame" and type(d) == "table" then
+		messGame(d.model, d.kind)
+		return
+	end
 	if kind == "tut2" and type(d) == "table" and d.start then
 		-- wait until the title screen and the loading cover are gone
 		task.spawn(function()
 			local t0 = os.clock()
 			while (pgui:FindFirstChild("MainMenu") or pgui:FindFirstChild("Loading")) and os.clock() - t0 < 30 do task.wait(0.2) end
 			task.wait(1.2)
-			start()
+			start(d.replay)
 		end)
 	end
 end)

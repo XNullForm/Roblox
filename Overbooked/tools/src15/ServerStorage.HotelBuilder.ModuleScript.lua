@@ -1036,63 +1036,56 @@ function B.deskProp()
 	return d
 end
 
--- the hotel safe beside the reception desk: a steel vault with its door swung open. HotelSim stacks
--- CashBundles on the safe's floor (Lobby.CashPile) and puts the Collect prompt on the open door
--- (Lobby.CashStand), so the money is always on show through the doorway.
+-- the hotel safe beside the reception desk. Round 41: a real vault, small and shut: a squat steel box on a plinth with
+-- gold bands, its round-dialled door closed flush in the front and a SAFE plaque. The takings stack in a gold tray on
+-- its top (Lobby.CashPile, HotelSim) and the Collect prompt sits on the door (Lobby.CashStand).
 local function cashSafe(lb, x, z)
 	local m = model(lb, "CashSafe")
 	local metal = Enum.Material.Metal
 	local steel = Color3.fromRGB(70, 74, 80)
 	local steelDk = Color3.fromRGB(50, 54, 60)
 	local y0 = FY -- floor top
-	local H, wall, w, d = 3.6, 0.3, 3.2, 2.8 -- body height, wall thickness, width (x), depth (z) (round 35: smaller, was 5.4 x 4.4 x 3.8)
-	-- shell: plinth, back, sides and top; the front (+z, toward the entrance) stays open as the doorway
-	block(m, "Plinth", Vector3.new(x - w / 2 - 0.15, y0 - 0.3, z - d / 2 - 0.15), Vector3.new(x + w / 2 + 0.15, y0 + 0.4, z + d / 2 + 0.15), steelDk, metal)
-	block(m, "Back", Vector3.new(x - w / 2, y0, z - d / 2), Vector3.new(x + w / 2, y0 + H, z - d / 2 + wall), steel, metal)
-	block(m, "Side", Vector3.new(x - w / 2, y0, z - d / 2), Vector3.new(x - w / 2 + wall, y0 + H, z + d / 2), steel, metal)
-	block(m, "Side", Vector3.new(x + w / 2 - wall, y0, z - d / 2), Vector3.new(x + w / 2, y0 + H, z + d / 2), steel, metal)
-	block(m, "Top", Vector3.new(x - w / 2 - 0.15, y0 + H, z - d / 2 - 0.15), Vector3.new(x + w / 2 + 0.15, y0 + H + 0.45, z + d / 2 + 0.15), steelDk, metal)
-	-- gold bands wrap the body; emerald velvet lines the inside of the back wall
-	block(m, "Band", Vector3.new(x - w / 2 - 0.08, y0 + 0.4, z - d / 2 - 0.08), Vector3.new(x + w / 2 + 0.08, y0 + 0.62, z + d / 2 + 0.08), C.gold, metal)
-	block(m, "Band", Vector3.new(x - w / 2 - 0.08, y0 + H - 0.62, z - d / 2 - 0.08), Vector3.new(x + w / 2 + 0.08, y0 + H - 0.4, z + d / 2 + 0.08), C.gold, metal)
-	block(m, "Velvet", Vector3.new(x - w / 2 + wall, y0 + 0.4, z - d / 2 + wall), Vector3.new(x + w / 2 - wall, y0 + H - 0.62, z - d / 2 + wall + 0.1), C.panel, Enum.Material.Fabric)
-	-- a warm light inside so the cash glows through the doorway
-	local lamp = part(m, "Lamp", Vector3.new(0.6, 0.1, 0.6), CFrame.new(x, y0 + H - 0.75, z - d / 2 + 0.75), C.warm, Enum.Material.Neon)
-	local pl = Instance.new("PointLight")
-	pl.Color = C.warm; pl.Range = 5; pl.Brightness = 1.4
-	pl.Parent = lamp
-	-- the vault door, hinged on the right jamb and swung open toward the lounge
-	local doorW, doorH = w - 2 * wall, H - 1.05
-	local hinge = CFrame.new(x + w / 2 - wall, y0 + 0.4 + doorH / 2, z + d / 2)
-	local swing = hinge * CFrame.Angles(0, math.rad(118), 0)
-	local door = part(lb, "CashStand", Vector3.new(doorW, doorH, 0.26), swing * CFrame.new(-doorW / 2, 0, 0), steelDk, metal)
-	part(m, "DoorPlate", Vector3.new(doorW - 0.7, doorH - 0.7, 0.08), swing * CFrame.new(-doorW / 2, 0, 0.17), C.gold, metal)
-	-- spokes dial and handle on the door's outer face
-	local dial = swing * CFrame.new(-doorW / 2 + 0.75, 0.35, 0.3)
-	part(m, "DialRing", Vector3.new(0.1, 0.8, 0.8), dial * CFrame.new(0, 0, -0.12) * CFrame.Angles(0, math.rad(90), 0), steel, metal, { Shape = Enum.PartType.Cylinder })
-	part(m, "Dial", Vector3.new(0.24, 0.56, 0.56), dial * CFrame.Angles(0, math.rad(90), 0), C.gold, metal, { Shape = Enum.PartType.Cylinder })
-	for a = 0, 240, 120 do
-		part(m, "Spoke", Vector3.new(0.08, 0.4, 0.08), dial * CFrame.Angles(0, 0, math.rad(a)) * CFrame.new(0, 0.48, 0), steel, metal)
+	local H, w, d = 2.9, 2.6, 2.3 -- body height, width (x), depth (z); was an open 3.6 x 3.2 x 2.8 cabinet
+	local V = Vector3.new
+	block(m, "Plinth", V(x - w / 2 - 0.12, y0, z - d / 2 - 0.12), V(x + w / 2 + 0.12, y0 + 0.3, z + d / 2 + 0.12), steelDk, metal)
+	block(m, "Body", V(x - w / 2, y0 + 0.3, z - d / 2), V(x + w / 2, y0 + 0.3 + H, z + d / 2), steel, metal)
+	local top = y0 + 0.3 + H
+	block(m, "Band", V(x - w / 2 - 0.06, y0 + 0.55, z - d / 2 - 0.06), V(x + w / 2 + 0.06, y0 + 0.72, z + d / 2 + 0.06), C.gold, metal)
+	block(m, "Band", V(x - w / 2 - 0.06, top - 0.42, z - d / 2 - 0.06), V(x + w / 2 + 0.06, top - 0.25, z + d / 2 + 0.06), C.gold, metal)
+	-- the door, shut: a dark frame and a thick plate on the front (+z, toward the entrance)
+	local fz = z + d / 2
+	local doorW, doorH = w - 0.7, H - 1.0
+	local cy = y0 + 0.3 + H / 2 - 0.08
+	block(m, "DoorFrame", V(x - doorW / 2 - 0.12, cy - doorH / 2 - 0.12, fz), V(x + doorW / 2 + 0.12, cy + doorH / 2 + 0.12, fz + 0.06), steelDk, metal)
+	local door = part(lb, "CashStand", V(doorW, doorH, 0.2), CFrame.new(x, cy, fz + 0.14), steelDk, metal)
+	part(m, "DoorPlate", V(doorW - 0.36, doorH - 0.36, 0.06), CFrame.new(x, cy, fz + 0.27), C.gold, metal)
+	-- the dial (spoked wheel), the handle and two hinges on the left
+	local dial = CFrame.new(x - 0.1, cy + 0.1, fz + 0.32)
+	part(m, "DialRing", V(0.12, 0.74, 0.74), dial * CFrame.Angles(0, math.rad(90), 0), steel, metal, { Shape = Enum.PartType.Cylinder })
+	part(m, "Dial", V(0.2, 0.48, 0.48), dial * CFrame.new(0, 0, 0.08) * CFrame.Angles(0, math.rad(90), 0), C.gold, metal, { Shape = Enum.PartType.Cylinder })
+	for ang = 0, 240, 120 do
+		part(m, "Spoke", V(0.08, 0.34, 0.08), dial * CFrame.new(0, 0, 0.18) * CFrame.Angles(0, 0, math.rad(ang)) * CFrame.new(0, 0.4, 0), steel, metal)
 	end
-	part(m, "Handle", Vector3.new(0.14, 1.0, 0.14), swing * CFrame.new(-doorW / 2 + 0.4, 0, 0.22), C.gold, metal)
+	part(m, "Handle", V(0.12, 0.7, 0.12), CFrame.new(x + doorW / 2 - 0.28, cy - 0.1, fz + 0.36), C.gold, metal)
 	for _, sy in ipairs({ -1, 1 }) do
-		part(m, "Hinge", Vector3.new(0.5, 0.22, 0.22), hinge * CFrame.new(0, sy * doorH / 3, 0.16) * CFrame.Angles(0, 0, math.rad(90)), steel, metal, { Shape = Enum.PartType.Cylinder })
+		part(m, "Hinge", V(0.4, 0.2, 0.2), CFrame.new(x - doorW / 2 - 0.02, cy + sy * doorH / 3, fz + 0.2) * CFrame.Angles(0, 0, math.rad(90)), steel, metal, { Shape = Enum.PartType.Cylinder })
 	end
-	-- SAFE plaque on the top's front edge, facing the entrance
-	local sign = block(m, "Sign", Vector3.new(x - 1.05, y0 + H + 0.02, z + d / 2 + 0.13), Vector3.new(x + 1.05, y0 + H + 0.38, z + d / 2 + 0.3), Color3.fromRGB(24, 84, 64), Enum.Material.SmoothPlastic)
+	-- SAFE plaque on the top band
+	local sign = block(m, "Sign", V(x - 0.75, top - 0.46, fz + 0.06), V(x + 0.75, top - 0.2, fz + 0.16), Color3.fromRGB(24, 84, 64), Enum.Material.SmoothPlastic)
 	local _, tl = textSign(sign, Enum.NormalId.Back, "SAFE", { color = Color3.fromRGB(240, 206, 130), pps = 60, light = 0.3 })
 	tl.FontFace = SERIF
+	-- the cash tray on top
+	block(m, "Tray", V(x - w / 2 + 0.1, top, z - d / 2 + 0.1), V(x + w / 2 - 0.1, top + 0.12, z + d / 2 - 0.1), C.gold, metal)
 	quiet(m)
-	door.CanCollide = false; door.CanQuery = false; door.CanTouch = false -- the open leaf never blocks a walkway
+	door.CanCollide = false; door.CanTouch = false
 	for _, p in ipairs(m:GetDescendants()) do
-		if p:IsA("BasePart") and (p.Name == "Plinth" or p.Name == "Back" or p.Name == "Side" or p.Name == "Top") then
-			p.CanCollide = true
-		end
+		if p:IsA("BasePart") and (p.Name == "Plinth" or p.Name == "Body") then p.CanCollide = true end
 	end
 	local pile = model(lb, "CashPile")
-	pile:SetAttribute("Origin", CFrame.new(x, y0 + 0.57, z + 0.05)) -- bundles stack on the safe's floor, behind the doorway
+	pile:SetAttribute("Origin", CFrame.new(x, top + 0.29, z)) -- bundles stack in the tray
 	return m
 end
+B.cashSafe = cashSafe
 
 -- fixtures only (desk, cash stand, lights, nav); the movable furniture lives in Hotel.Placed
 local function buildLobby(hotel)

@@ -4,7 +4,7 @@
 -- "o" / "u" drop to a round boop, so a line has a little tune that follows the words. A statement drifts down,
 -- the end of a question lifts, "!" is louder and quicker, CAPS shout, "..." trails off slow and low, commas and
 -- full stops leave small pauses. speak() returns how long the line takes; opts.dur stretches the beeps over a
--- set time (Speech plays them over its muffled words).
+-- set time (round 41: Speech only stretches long lines a little; it is the only voice now).
 local SoundService = game:GetService("SoundService")
 local ContentProvider = game:GetService("ContentProvider")
 local V = {}
@@ -77,11 +77,11 @@ end
 
 local GAP = 0.082
 
--- the beats a line will play (thinned to at most 30) and how long they take
+-- the beats a line will play (thinned to at most 60) and how long they take
 local function shape(line, rate)
 	local beats = plan(line)
 	local seq = {}
-	local step = math.max(1, #beats / 30)
+	local step = math.max(1, #beats / 60) -- round 32: was 30, long lines ran out of beeps
 	local i = 1
 	while i <= #beats do
 		table.insert(seq, beats[math.floor(i)])
@@ -108,7 +108,7 @@ function V.speak(part, line, base, opts)
 	local n = #seq
 	if n == 0 then return 0 end
 	local stretch = 1
-	if opts.dur and d > 0 then stretch = math.clamp(opts.dur / d, 0.6, 2.2) end
+	if opts.dur and d > 0 then stretch = math.clamp(opts.dur / d, 0.6, 1.4) end
 	local pool = {}
 	local sg = group()
 	for k = 1, 4 do
@@ -152,7 +152,7 @@ function V.speak(part, line, base, opts)
 				s = pool[bi]
 			end
 			s.PlaybackSpeed = math.max(0.4, p + rng:NextNumber(-0.03, 0.03))
-			s.Volume = vol * (opts.volume or 1)
+			s.Volume = vol * (opts.volume or 1) * 0.55 -- round 21: quieter
 			s.TimePosition = 0
 			s:Play()
 			local w = (gap * rng:NextNumber(0.88, 1.14) + (b.pause or 0) + (b.trail and 0.22 or 0)) * stretch

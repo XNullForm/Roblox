@@ -225,11 +225,12 @@ function Looks.description(rng, kind, female)
 	local skin = pick(rng, Looks.SKIN)
 	d.HeadColor, d.TorsoColor = skin, skin
 	d.LeftArmColor, d.RightArmColor, d.LeftLegColor, d.RightLegColor = skin, skin, skin, skin
-	local h = rng:NextNumber(0.9, 1.08)
-	if kind == "kid" then h = rng:NextNumber(0.62, 0.74) end
-	if kind == "elder" then h = rng:NextNumber(0.88, 0.98) end
+	-- round 41: everyone normal sized (was 0.9-1.08 tall and 0.86-1.06 wide, some looked huge)
+	local h = rng:NextNumber(0.97, 1.03)
+	if kind == "kid" then h = rng:NextNumber(0.78, 0.84) end
+	if kind == "elder" then h = rng:NextNumber(0.94, 0.98) end
 	d.HeightScale = h
-	d.WidthScale = rng:NextNumber(0.86, 1.06)
+	d.WidthScale = rng:NextNumber(0.95, 1.02)
 	d.DepthScale = d.WidthScale
 	d.HeadScale = 1
 	d.BodyTypeScale = 0

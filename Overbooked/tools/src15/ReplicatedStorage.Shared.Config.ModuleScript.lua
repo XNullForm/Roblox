@@ -155,7 +155,7 @@ C.RESEARCH_TIME_MUL = 3
 -- what a stay is worth to a guest: (room stars + lobby extras - STAY_PAR) * STAY_MOOD lands on their mood at check-out
 C.STAY_PAR = 4
 C.STAY_MOOD = 8
-C.WALK_SPEED = 8 -- round 32: was 11 (a half jog); 8 plays the walk on its own
+C.WALK_SPEED = 6.5 -- round 41: was 8 (round 32: was 11); a calm stroll
 
 -- the game day (one day/night cycle for the whole map; DayNight + Shared.Clock, round 9)
 C.CYCLE = 420 -- real seconds per game day (round 10e: was 900)
@@ -204,7 +204,7 @@ C.STAFF = {
 }
 C.STAFF_CLEAN = 6.5 -- round 13: was 2.6.
 -- seconds a janitor spends on each cleaning job
-C.STAFF_WALK = 13
+C.STAFF_WALK = 10 -- round 41: was 13
 C.DOORMAN_DELAY = 3 -- round 13: was 0.6 (instant).
 C.DOORMAN_WORK = 6 -- round 13: seconds the doorman spends greeting a guest and taking their bags (after walking out to them)
 -- a guest waits this long before the doorman lets them in (shared by the doormen)

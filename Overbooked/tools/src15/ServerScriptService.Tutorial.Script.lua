@@ -13,6 +13,22 @@ local DONE = 5 -- the old four-step tutorial finished at 5, so anyone who did it
 local REWARD = 500
 
 local introDone = {} -- round 20: player -> true once their intro story ended
+
+-- round 41: while the tutorial runs the player has InTutorial (the HUD hides the chapter goals, the mess pops a
+-- cleaning minigame, jobs skip their lost-item surprises) and a brand-new hotel holds its guests back (plot attribute
+-- GuestsHeld, read by HotelSim.wantsWalkIn) until the tutorial says "guests" (the "wait for your first guest" step).
+local function plotOf(player)
+	local plots = workspace:FindFirstChild("Plots")
+	return plots and plots:FindFirstChild(player:GetAttribute("Plot") or "")
+end
+local function release(player)
+	local plot = plotOf(player)
+	if plot then plot:SetAttribute("GuestsHeld", nil) end
+end
+local function stopTut(player)
+	player:SetAttribute("InTutorial", nil)
+	release(player)
+end
 local offered = {} -- player -> true once this session's tutorial was sent
 
 local function offer(player)
@@ -26,6 +42,8 @@ local function offer(player)
 	end
 	-- round 35: Aunt Marigold left the place in a state: the first job is cleaning it up
 	pcall(function() require(game:GetService("ServerStorage"):WaitForChild("Mess")).spawn(plot) end)
+	if plot then plot:SetAttribute("GuestsHeld", true) end
+	player:SetAttribute("InTutorial", true)
 	-- round 20: the story plays first; the client says when it is over (or 40 s pass)
 	introDone[player] = nil
 	Notify:FireClient(player, "cutscene", { kind = "intro" })
@@ -52,10 +70,17 @@ local function watch(player)
 end
 
 local lastReplay = {}
-TutSkip.OnServerEvent:Connect(function(player, action)
+TutSkip.OnServerEvent:Connect(function(player, action, arg)
 	if action == "introDone" then
 		introDone[player] = true
+	elseif action == "guests" then
+		release(player)
+	elseif action == "mess" then
+		if typeof(arg) == "Instance" and player:GetAttribute("InTutorial") then
+			pcall(function() require(game:GetService("ServerStorage"):WaitForChild("Mess")).finish(player, arg) end)
+		end
 	elseif action == "done" then
+		stopTut(player)
 		if (player:GetAttribute("Tut") or 0) < DONE then
 			player:SetAttribute("Tut", DONE)
 			player:SetAttribute("Cash", (player:GetAttribute("Cash") or 0) + REWARD)
@@ -65,14 +90,17 @@ TutSkip.OnServerEvent:Connect(function(player, action)
 	elseif action == "replay" then
 		if os.clock() - (lastReplay[player] or 0) < 3 then return end
 		lastReplay[player] = os.clock()
+		player:SetAttribute("InTutorial", true)
 		Notify:FireClient(player, "tut2", { start = true, replay = true })
 	else
+		stopTut(player)
 		-- "skip" (and the old HUD card's plain FireServer())
 		if (player:GetAttribute("Tut") or 0) < DONE then player:SetAttribute("Tut", DONE) end
 	end
 end)
 
 Players.PlayerRemoving:Connect(function(p)
+	release(p)
 	offered[p] = nil
 	lastReplay[p] = nil
 end)

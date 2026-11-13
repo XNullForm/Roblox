@@ -3626,6 +3626,8 @@ do
 		local y = sf[1]
 		local want = Players.LocalPlayer:GetAttribute("MGSurprise")
 		if want == "off" then return nil end
+		-- round 41: nobody has stayed yet during the tutorial, so nobody can have lost anything (and no bugs either)
+		if Players.LocalPlayer:GetAttribute("InTutorial") and want == nil then return nil end
 		if want == "lost" then return lostStage(y) end
 		if want == "bug" and sf[2] then return bugStage(y) end
 		if want then return lostStage(y) end

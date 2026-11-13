@@ -151,9 +151,9 @@ local function barButton(spec, key, label, onClick)
 	UI.gloss(tile, big and 20 or 17, 0.45)
 	local playShine = UI.shine(tile, big and 20 or 17)
 	local ic = UI.icon(tile, spec.img, big and 48 or 42, { Name = "Icon", Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 7 })
-	local lab = UI.label(b, string.upper(label), big and 14 or 12, {
+	local lab = UI.label(b, string.upper(label), big and 16 or 14, {
 		Name = "Label", FontFace = UI.F.display, TextColor3 = big and T.brandDk or T.cream, TextXAlignment = Enum.TextXAlignment.Center,
-		Position = UDim2.new(0, 0, 1, -14), Size = UDim2.new(1, 0, 0, 14), ZIndex = 5,
+		Position = UDim2.new(0, -6, 1, -15), Size = UDim2.new(1, 12, 0, 16), ZIndex = 5,
 	})
 	local k
 	if key then
@@ -226,6 +226,27 @@ for _, m in ipairs({
 	{ { img = "rbxassetid://95707331138329", color = Color3.fromRGB(142, 150, 196) }, nil, "Settings", "settings" },
 }) do
 	menuBtns[#menuBtns + 1] = barButton(m[1], m[2], m[3], function() openMenu(m[4]) end)
+	menuBtns[#menuBtns]:SetAttribute("Page", m[4])
+end
+buildBtn:SetAttribute("Page", "build")
+-- round 41: during the tutorial a page's button only shows once the tutorial has unlocked it (UI.locked)
+do
+	local function applyLocks()
+		for _, b in ipairs({ buildBtn, table.unpack(menuBtns) }) do
+			local show = not UI.locked(b:GetAttribute("Page"))
+			if b.Visible ~= show then
+				b.Visible = show
+				if show then
+					UI.pop(b, 0.3, 0.5)
+					UI.sparkles(b, 6, T.sun, 1)
+				end
+			end
+		end
+		local div = rowList:FindFirstChild("Div")
+		if div then div.Visible = not S.building and not UI.locked("build") end
+	end
+	player:GetAttributeChangedSignal("TutLock"):Connect(applyLocks)
+	applyLocks()
 end
 
 local function setBuildButton(on)
@@ -607,41 +628,61 @@ refreshCash()
 ---------------------------------------------------------------- the tool bar (bottom)
 -- One dark bar: the Room Builder, then a chip per setting (click to step through its choices), then Undo.
 
-local toolWrap = wrapper("Tools", UDim2.fromOffset(1040, 64), UDim2.new(0.5, 0, 1, -14), Vector2.new(0.5, 1))
+-- round 41: remade: a taller glass tray with a soft top light; each chip says what it is on top and shows its
+-- setting in a pill below (green when on); the hotel's floors and roof are picked here too
+local toolWrap = wrapper("Tools", UDim2.fromOffset(1400, 76), UDim2.new(0.5, 0, 1, -14), Vector2.new(0.5, 1))
 toolWrap.Visible = false
 local toolHolder = UI.new("Frame", {
-	Name = "Bar", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 64), Position = UDim2.fromScale(0.5, 0.5),
-	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.hud, BackgroundTransparency = 0.08, Parent = toolWrap,
+	Name = "Bar", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 72), Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.04, Parent = toolWrap,
 })
-UI.corner(toolHolder, 18)
-UI.stroke(toolHolder, 1, T.hudLine, 0.2)
+UI.corner(toolHolder, 20)
+UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(UI.shade(T.hud, 0.12), T.hud), Parent = toolHolder })
+UI.stroke(toolHolder, 1.5, T.hudLine, 0.1)
+S.toolFit = UI.new("UIScale", { Parent = toolHolder }) -- shrinks the bar to the room left beside the catalog (layout)
 UI.pad(toolHolder, 8, 0, 8, 0)
 UI.list(toolHolder, Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
 S.rbRailBtn = UI.button(toolHolder, {
 	name = "RoomBuilder", text = "Room Builder", icon = ICON.roomReady, iconSize = 24, kind = "gold", key = "F",
-	size = UDim2.fromOffset(196, 48), textSize = 16, radius = 12, order = 1,
+	size = UDim2.fromOffset(168, 54), textSize = 16, radius = 12, order = 1,
 	onClick = function() if S.toggleRoom then S.toggleRoom() end end,
 })
 UI.new("Frame", { Name = "Div", Size = UDim2.fromOffset(1, 28), BackgroundColor3 = T.hudLine, BorderSizePixel = 0, LayoutOrder = 2, Parent = toolHolder })
 -- options = { { value, text }, ... }; a click moves on to the next one
 local function toolChip(label, options, current, order, tip, cb)
-	local b = UI.new("TextButton", { Name = "Chip_" .. label, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(#label > 9 and 104 or 84, 48), BackgroundColor3 = T.hud2, LayoutOrder = order, Parent = toolHolder })
-	UI.corner(b, 12)
-	UI.label(b, label, 10, { FontFace = UI.F.heavy, TextColor3 = T.hudMuted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 7), Size = UDim2.new(1, 0, 0, 12) })
-	local v = UI.label(b, "", 15, { FontFace = UI.F.heavy, TextColor3 = T.hudText, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 21), Size = UDim2.new(1, 0, 0, 20) })
+	local w = #label * 8 + 16
+	for _, o in ipairs(options) do w = math.max(w, #o[2] * 9 + 24) end
+	w = math.clamp(w, 72, 124)
+	local b = UI.new("TextButton", { Name = "Chip_" .. label, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(w, 58), BackgroundColor3 = T.hud2, LayoutOrder = order, Parent = toolHolder })
+	UI.corner(b, 14)
+	local bRim = UI.stroke(b, 1.5, T.hudLine, 0)
+	UI.label(b, label, 12, { FontFace = UI.F.heavy, TextColor3 = T.hudMuted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 16) })
+	local pill = UI.new("Frame", { Size = UDim2.new(1, -12, 0, 26), Position = UDim2.new(0.5, 0, 1, -6), AnchorPoint = Vector2.new(0.5, 1), BackgroundColor3 = T.hud, Parent = b })
+	UI.corner(pill, 9)
+	local v = UI.label(pill, "", 16, { FontFace = UI.F.heavy, TextColor3 = T.hudText, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), TextTruncate = Enum.TextTruncate.AtEnd })
 	local idx = 1
 	for i, o in ipairs(options) do if o[1] == current then idx = i end end
 	local function show()
 		local o = options[idx]
+		local off = o[1] == false or o[1] == 0
 		v.Text = o[2]
-		v.TextColor3 = o[1] == true and T.green or (o[1] == false or o[1] == 0) and T.hudMuted or T.hudText
+		v.TextColor3 = off and T.hudMuted or Color3.new(1, 1, 1)
+		pill.BackgroundColor3 = o[1] == true and T.greenDk or T.hud
 	end
 	show()
-	b.MouseEnter:Connect(function() b.BackgroundColor3 = T.hudLine end)
-	b.MouseLeave:Connect(function() b.BackgroundColor3 = T.hud2 end)
+	b.MouseEnter:Connect(function()
+		UI.tween(b, 0.12, { BackgroundColor3 = T.hudLine })
+		bRim.Color = T.brand
+		UI.sound("Hover")
+	end)
+	b.MouseLeave:Connect(function()
+		UI.tween(b, 0.15, { BackgroundColor3 = T.hud2 })
+		bRim.Color = T.hudLine
+	end)
 	b.Activated:Connect(function()
 		idx = idx % #options + 1
 		show()
+		UI.pop(pill, 0.85, 0.2)
 		UI.sound("Tick")
 		cb(options[idx][1])
 	end)
@@ -666,13 +707,32 @@ S.setZones = toolChip("ZONES", ONOFF, S.zones, 6, "Colour each room's floor", fu
 end)
 S.wallSnap = true
 S.keep = false
-toolChip("WALL SNAP", ONOFF, true, 7, "Walls lock onto wall ends", function(on) S.wallSnap = on end)
+toolChip("WALL SNAP", ONOFF, true, 7, "Walls and new rooms lock onto the walls already there", function(on) S.wallSnap = on end)
 toolChip("KEEP PLACING", ONOFF, false, 8, "Keep the item in hand after you place it", function(on) S.keep = on end)
-UI.new("Frame", { Name = "Div2", Size = UDim2.fromOffset(1, 28), BackgroundColor3 = T.hudLine, BorderSizePixel = 0, LayoutOrder = 9, Parent = toolHolder })
+-- round 41: the hotel's floors and roof are picked here now (they left the Upgrades page). Floor tiles to lay by
+-- hand are in the catalog (Structure).
+do
+	local Up = require(Shared:WaitForChild("Upgrades"))
+	local upRemote = Shared.Remotes:WaitForChild("Upgrade")
+	local function short(name) return (name:gsub(" planks", ""):gsub(" tile", ""):gsub("Checker ", ""):gsub("Green ", "")) end
+	for k, g in ipairs({ { "LOBBY FLOOR", "lobby", 1 }, { "ROOM FLOORS", "rooms", 2 }, { "ROOF STYLE", "roof", 4 } }) do
+		local opts = {}
+		for _, e in ipairs(Up.STYLES[g[3]].list) do table.insert(opts, { e[1], short(e[2]) }) end
+		local set
+		set = toolChip(g[1], opts, Up.style(HOTEL)[g[2]], 9 + k, "Free. Click to change", function(v)
+			task.spawn(function()
+				local ok, why = upRemote:InvokeServer("style", g[2], v)
+				if not ok then toast(why or "Can't change that", nil, true) end
+				set(Up.style(HOTEL)[g[2]])
+			end)
+		end)
+	end
+end
+UI.new("Frame", { Name = "Div2", Size = UDim2.fromOffset(1, 28), BackgroundColor3 = T.hudLine, BorderSizePixel = 0, LayoutOrder = 13, Parent = toolHolder })
 S.undo = {} -- uids you placed, newest last
 UI.button(toolHolder, {
 	name = "Undo", text = "Undo", icon = ICON.rotate, iconSize = 18, kind = "ink", textSize = 15, key = "Z",
-	size = UDim2.fromOffset(116, 48), radius = 12, order = 10, onClick = function() S.doUndo() end,
+	size = UDim2.fromOffset(116, 54), radius = 12, order = 14, onClick = function() S.doUndo() end,
 })
 
 ---------------------------------------------------------------- place bar (over the tool bar, while something is in hand)
@@ -833,7 +893,12 @@ local function layout()
 	local right = 32 + 404 * k
 	local cx = 16 + math.max(vp.X - right - 16, 300) / 2
 	toolWrap.Position = UDim2.new(0, cx, 1, -14)
-	barWrap.Position = UDim2.new(0, cx, 1, -14 - 72 * kOf(toolWrap))
+	if S.toolFit and toolHolder.AbsoluteSize.X > 0 then
+		local need = toolHolder.AbsoluteSize.X / S.toolFit.Scale
+		local fit = math.clamp((vp.X - right - 32) / need, 0.5, 1)
+		if math.abs(fit - S.toolFit.Scale) > 0.01 then S.toolFit.Scale = fit end
+	end
+	barWrap.Position = UDim2.new(0, cx, 1, -14 - 84 * kOf(toolWrap))
 	if S.building then
 		btnWrap.AnchorPoint = Vector2.new(1, 0)
 		btnWrap.Position = UDim2.new(1, -18, 0, 12)
@@ -847,9 +912,10 @@ local function layout()
 	end
 	for _, b in ipairs(menuBtns) do b.Visible = not S.building end
 	local div = rowList:FindFirstChild("Div")
-	if div then div.Visible = not S.building end
+	if div then div.Visible = not S.building and not UI.locked("build") end
 end
 camera:GetPropertyChangedSignal("ViewportSize"):Connect(function() task.defer(layout) end)
+toolHolder:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() task.defer(layout) end)
 
 ---------------------------------------------------------------- zone overlays + room labels (local only)
 
@@ -974,8 +1040,8 @@ local function makeOverlay()
 	for _, z in ipairs(ZONES:GetChildren()) do
 		if z:IsA("BasePart") then
 			flatPlate(z, Color3.fromRGB(150, 210, 255), 0.9, true)
-			-- only zones that hold a real room (or the lobby) get a card, so empty land stays clean
-			if not labels[z.Name] and (z.Name == "Lobby" or HOTEL.Rooms:FindFirstChild(z.Name)) then
+			-- round 41: the room cards are gone (the floors and roof moved to the tool bar)
+			if false and not labels[z.Name] and (z.Name == "Lobby" or HOTEL.Rooms:FindFirstChild(z.Name)) then
 				roomLabel(z)
 				local r = HOTEL.Rooms:FindFirstChild(z.Name)
 				if r then
@@ -1759,7 +1825,8 @@ do
 		params.FilterDescendantsInstances = f
 		local r = cf.RightVector
 		-- round 33: 1.4 deep so walls just off the line (shell walls past the floor edge) are reused
-		for _, p in ipairs(workspace:GetPartBoundsInBox(cf * CFrame.new(0, 4, 0), Vector3.new(2.4, 3, 1.4), params)) do
+		-- round 41: 2.2 deep (was 1.4): thick and skirted walls sit up to a stud off the line
+		for _, p in ipairs(workspace:GetPartBoundsInBox(cf * CFrame.new(0, 4, 0), Vector3.new(2.4, 3, 2.2), params)) do
 			local owner = Build.placedOf(p)
 			if owner then
 				local it = Catalog.ITEMS[owner:GetAttribute("Item") or ""]
@@ -1792,6 +1859,36 @@ do
 				for _, e in ipairs({ -1, 1 }) do
 					local q = cf.Position + cf.RightVector * e * sz.X / 2
 					if Vector2.new(q.X - p.X, q.Z - p.Z).Magnitude < 1.4 then tryX(q.X) tryZ(q.Z) end
+				end
+			end
+		end
+		-- round 41: and onto the line of any wall that runs past (placed walls, the shell, room partitions), so a new
+		-- room starts flush with the walls already there and reuses them
+		local function line(cx, cz, ex, ez)
+			if ex > ez * 2 and ez < 3 then
+				if p.X > cx - ex / 2 - 2 and p.X < cx + ex / 2 + 2 then tryZ(cz) end
+			elseif ez > ex * 2 and ex < 3 then
+				if p.Z > cz - ez / 2 - 2 and p.Z < cz + ez / 2 + 2 then tryX(cx) end
+			end
+		end
+		for _, m in ipairs(PLACED:GetChildren()) do
+			local iid = m:GetAttribute("Item")
+			local it = iid and Catalog.ITEMS[iid]
+			if it and it.structure then
+				local _, sz = Build.box(iid)
+				local cf = m:GetPivot()
+				local rx = math.abs(cf.RightVector.X)
+				line(cf.X, cf.Z, rx * sz.X + (1 - rx) * 1, (1 - rx) * sz.X + rx * 1)
+			end
+		end
+		for _, n in ipairs({ "Shell", "Rooms" }) do
+			local f = HOTEL:FindFirstChild(n)
+			for _, q in ipairs(f and f:GetDescendants() or {}) do
+				if q:IsA("BasePart") and q.CanCollide and q.Size.Y >= 6 then
+					local c = q.CFrame
+					local ex = math.abs(c.RightVector.X) * q.Size.X + math.abs(c.LookVector.X) * q.Size.Z
+					local ez = math.abs(c.RightVector.Z) * q.Size.X + math.abs(c.LookVector.Z) * q.Size.Z
+					line(c.X, c.Z, ex, ez)
 				end
 			end
 		end
@@ -2900,7 +2997,7 @@ local function leave()
 end
 
 toggle = function()
-	if S.building then leave() else enter() end
+	if S.building then leave() elseif not UI.locked("build") then enter() end
 end
 
 ---------------------------------------------------------------- input

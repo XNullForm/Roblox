@@ -154,8 +154,8 @@ local function run()
 	end
 	UI.icon(left, ICON.hotel, 64, { Position = UDim2.fromOffset(-6, -10), ZIndex = 54 })
 	L("OVERBOOKED", 70, UI.F.black, T.cream, UDim2.fromOffset(-3, 58), UDim2.fromOffset(520, 74))
-	L("SEASIDE HOTEL TYCOON", 15, UI.F.black, T.brand, UDim2.fromOffset(2, 134), UDim2.fromOffset(520, 18))
-	L("SAVE FILES", 13, UI.F.heavy, T.muted, UDim2.fromOffset(2, 192), UDim2.fromOffset(300, 16))
+	L("SEASIDE HOTEL TYCOON", 18, UI.F.black, T.brand, UDim2.fromOffset(2, 134), UDim2.fromOffset(520, 22))
+	L("SAVE FILES", 16, UI.F.heavy, T.muted, UDim2.fromOffset(2, 190), UDim2.fromOffset(300, 20))
 
 	local busy = false
 	local start -- forward
@@ -174,10 +174,10 @@ local function run()
 		st.Parent = card
 		local tile = UI.new("Frame", { Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(16, 18), BackgroundColor3 = T.line, ZIndex = 54, Parent = card })
 		UI.corner(tile, 14)
-		local tileCap = UI.label(tile, "FILE", 9, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 10), ZIndex = 55 })
+		local tileCap = UI.label(tile, "FILE", 11, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 6), Size = UDim2.new(1, 0, 0, 12), ZIndex = 55 })
 		local tileNum = UI.label(tile, tostring(i), 26, { FontFace = UI.F.black, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 30), ZIndex = 55 })
-		local name = UI.label(card, "Save file " .. i, 20, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(88, 20), Size = UDim2.fromOffset(230, 24), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
-		local sub = UI.label(card, "Checking...", 14, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(88, 48), Size = UDim2.fromOffset(250, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
+		local name = UI.label(card, "Save file " .. i, 22, { FontFace = UI.F.black, TextColor3 = T.cream, Position = UDim2.fromOffset(88, 20), Size = UDim2.fromOffset(212, 26), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
+		local sub = UI.label(card, "Checking...", 16, { FontFace = UI.F.bold, TextColor3 = T.muted, Position = UDim2.fromOffset(88, 48), Size = UDim2.fromOffset(212, 20), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 54 })
 		local rec = { filled = false }
 		local playBtn, playText = UI.button(card, {
 			text = "New hotel", kind = "green", size = UDim2.fromOffset(124, 46), pos = UDim2.new(1, -16, 0.5, 0), anchor = Vector2.new(1, 0.5), textSize = 17,
@@ -187,9 +187,11 @@ local function run()
 		UI.setDisabled(playBtn, true)
 		-- the bin: press once to arm it, again to erase the file
 		local armed = 0
-		local bin = UI.new("ImageButton", { Name = "Delete", Size = UDim2.fromOffset(36, 36), Position = UDim2.new(1, -150, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.line, Visible = false, ZIndex = 54, Parent = card })
+		local bin = UI.new("ImageButton", { Name = "Delete", Size = UDim2.fromOffset(40, 40), Position = UDim2.new(1, -150, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = T.line, BackgroundTransparency = 0, AutoButtonColor = true, Visible = false, ZIndex = 54, Parent = card })
 		UI.corner(bin, 10)
-		local binIcon = UI.new("ImageLabel", { Image = G.trash, ImageColor3 = T.muted, Size = UDim2.fromOffset(18, 18), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 55, Parent = bin })
+		local binRim = UI.rim(bin, T.red, 2) -- round 41: a solid tile, so turning red when armed never leaves it white-on-white
+		binRim.Transparency = 1
+		local binIcon = UI.new("ImageLabel", { Image = G.trash, ImageColor3 = T.muted, BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 55, Parent = bin })
 		UI.tooltip(bin, function() return os.clock() - armed < 4 and "Press again to erase this save for good" or "Delete this save" end)
 		bin.Activated:Connect(function()
 			if busy or not rec.filled then return end
@@ -204,12 +206,17 @@ local function run()
 				armed = os.clock()
 				UI.sound("Error")
 				bin.BackgroundColor3 = T.red
-				binIcon.ImageColor3 = T.white
-				sub.Text = "Press the bin again to erase this save"
+				binIcon.ImageColor3 = Color3.new(1, 1, 1)
+				binRim.Transparency = 0
+				sub.TextColor3 = T.red
+				sub.Text = "Press the red bin again"
+				UI.pop(bin, 0.8, 0.2)
 				task.delay(4, function()
 					if bin.Parent and os.clock() - armed >= 4 then
 						bin.BackgroundColor3 = T.line
 						binIcon.ImageColor3 = T.muted
+						binRim.Transparency = 1
+						sub.TextColor3 = T.muted
 						if rec.text then sub.Text = rec.text end
 					end
 				end)
@@ -222,6 +229,8 @@ local function run()
 			bin.Visible = rec.filled
 			bin.BackgroundColor3 = T.line
 			binIcon.ImageColor3 = T.muted
+			binRim.Transparency = 1
+			sub.TextColor3 = T.muted
 			if d then
 				name.Text = d.name or "My Hotel"
 				rec.text = "Level " .. (d.level or 1) .. ",  " .. (d.rooms or 3) .. " rooms,  " .. cash(d.cash)
@@ -254,11 +263,11 @@ local function run()
 	for _, o in ipairs(replayToggle and { replayToggle, unpack(replayToggle:GetDescendants()) } or {}) do
 		if o:IsA("GuiObject") then o.ZIndex += 53 end -- above the white panel
 	end
-	L("Replay the tutorial when I continue", 15, UI.F.bold, T.cream, UDim2.fromOffset(74, optY + 4), UDim2.fromOffset(400, 24))
+	L("Replay the tutorial when I continue", 17, UI.F.bold, T.cream, UDim2.fromOffset(74, optY + 4), UDim2.fromOffset(400, 24))
 	local openSettings -- forward
 	local setBtn = UI.button(left, { text = "Settings", icon = G.settings, iconSize = 18, kind = "night", size = UDim2.fromOffset(160, 44), pos = UDim2.fromOffset(0, optY + 52), textSize = 17, onClick = function() openSettings() end })
 	setBtn.ZIndex = 53
-	local here = L("", 14, UI.F.bold, T.muted, UDim2.fromOffset(2, optY + 112), UDim2.fromOffset(500, 18))
+	local here = L("", 16, UI.F.bold, T.muted, UDim2.fromOffset(2, optY + 110), UDim2.fromOffset(500, 22))
 	local function countHere()
 		local n = #Players:GetPlayers() - 1
 		here.Text = n <= 0 and "Just you on this street right now" or (n == 1 and "1 other player on this street" or (n .. " other players on this street"))

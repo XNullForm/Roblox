@@ -157,7 +157,8 @@ local function newPed(model, name, x, z, side, dir)
 		pause = 0, plan = {},
 		decided = {}, -- hotel / crosswalk / shop decisions already made (by x key)
 	}
-	p.speed = (rng:NextNumber(8.5, 11.5)) * (model:GetAttribute("WalkSpeedMul") or 1)
+	p.speed = (rng:NextNumber(6.5, 8.5)) -- round 41: was 8.5-11.5
+			 * (model:GetAttribute("WalkSpeedMul") or 1)
 	p.hum.WalkSpeed = p.speed
 	p.wetMood = rng:NextNumber() -- who reaches for an umbrella first
 	p.hum.AutoRotate = true
