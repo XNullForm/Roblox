@@ -637,7 +637,7 @@ local function startCleaning(player, room, task)
 	Notify:FireClient(player, "minigame", {
 		task = task,
 		label = room.spots[task] and room.spots[task]:GetAttribute("Label"),
-		room = room.id,
+		room = room.label,
 	})
 	task.delay(C.MINIGAME_TIMEOUT, function()
 		local s = cleaning[player]
@@ -1025,6 +1025,9 @@ local function addRoom(m)
 	room.water, room.steam = water, steam
 	m:SetAttribute("TasksLeft", 0)
 	rooms[id] = room
+	-- round 33: the number players see (101, 102... or renamed); room.id stays the key
+	room.label = Rooms.label(HOTEL, m) or id
+	m:GetAttributeChangedSignal("Label"):Connect(function() room.label = m:GetAttribute("Label") or id end)
 	doorBits(room)
 	dressRoom(room)
 	m:GetAttributeChangedSignal("Tier"):Connect(function() if onTier then onTier(room) end end)
@@ -1323,7 +1326,7 @@ local function scanSoon()
 		for _, id in ipairs(made) do
 			local r = rooms[id]
 			if r then sparkleBurst(r.nav.Enter.Position + Vector3.new(0, 2, 0)) end
-			tell("toast", { text = "Room " .. id .. " made! Add a bed, shower and toilet", icon = "roomReady" })
+			tell("toast", { text = "Room " .. (r and r.label or id) .. " made! Add a bed, shower and toilet", icon = "roomReady" })
 		end
 	end)
 end
@@ -2132,7 +2135,7 @@ local function serve(g, secs, action)
 		prompt:SetAttribute("Busy", true)
 		status(g, "bell", action == "Check In" and "Checking in" or "Paying", "green")
 		local room = g.room
-		local data = { task = action == "Check In" and "CheckIn" or "CheckOut", guest = g.name, room = room and room.id }
+		local data = { task = action == "Check In" and "CheckIn" or "CheckOut", guest = g.name, room = room and room.label }
 		if data.task == "CheckIn" then
 			local names = { g.name }
 			for _ = 1, 40 do
@@ -2142,7 +2145,7 @@ local function serve(g, secs, action)
 			end
 			data.names = names
 			data.keys = {}
-			for id in pairs(rooms) do table.insert(data.keys, id) end
+			for _, r in pairs(rooms) do table.insert(data.keys, r.label) end
 			data.nights = rng:NextInteger(1, 4)
 		else
 			local bill = room and room.model and room.model:GetAttribute("Price") or C.ROOM_PRICE
@@ -2615,12 +2618,12 @@ task.spawn(function()
 						end
 						if pick_ and giveTray(player, pick_) then
 							orders[pick_].carrier = player
-							Notify:FireClient(player, "toast", { text = "Take it up to room " .. pick_.id .. " and knock", icon = "food" })
+							Notify:FireClient(player, "toast", { text = "Take it up to room " .. pick_.label .. " and knock", icon = "food" })
 						end
 					end)
 				end
 				p.Enabled = waiting ~= nil
-				p.ObjectText = waiting and ("Room " .. waiting.id) or ""
+				p.ObjectText = waiting and ("Room " .. waiting.label) or ""
 			end
 		end
 		task.wait(0.5)
@@ -3173,7 +3176,7 @@ local function guestLife(g)
 			tell("flavor", { text = g.name .. " left a gift: $" .. ev.gift .. "!", icon = ev.icon })
 		end
 		if not met then
-			tell("toast", { text = g.name .. " wanted " .. (ev.missing or "more") .. " in room " .. room.id, icon = ev.icon, bad = true })
+			tell("toast", { text = g.name .. " wanted " .. (ev.missing or "more") .. " in room " .. room.label, icon = ev.icon, bad = true })
 		elseif not g.tourist then
 			tell("flavor", { text = g.name .. " loved their stay: $" .. pay, icon = ev.icon })
 		end
@@ -3190,7 +3193,7 @@ local function guestLife(g)
 	-- the review: mood becomes stars, led by the strongest reason
 	local rtext, rstars = reviewText(g)
 	loadReviews()
-	table.insert(reviews, 1, { name = g.name, stars = rstars, text = rtext, room = room.id, w = g.gtype and g.gtype.reviewW })
+	table.insert(reviews, 1, { name = g.name, stars = rstars, text = rtext, room = room.label, w = g.gtype and g.gtype.reviewW })
 	if g.gtype and g.gtype.reviewW then
 		tell("flavor", { text = g.name .. " posted a " .. rstars .. "-star review to their followers!", icon = "phone", bad = rstars <= 2 })
 	end
@@ -3201,7 +3204,7 @@ local function guestLife(g)
 	quest("guests")
 	quest("earn", pay)
 	if rstars >= 5 then quest("review5") end
-	tell("review", { name = g.name, stars = rstars, text = rtext, room = room.id })
+	tell("review", { name = g.name, stars = rstars, text = rtext, room = room.label })
 	say(g, rstars >= 4 and pick(C.LINES.checkout) or (rstars <= 2 and "I won't be back." or "Thanks, bye."), 3)
 	Notify:FireAllClients("paid", { amount = pay, pos = g.head.Position + Vector3.new(0, 3, 0) })
 	play(g, rstars >= 4 and "wave_small" or "head_shake")

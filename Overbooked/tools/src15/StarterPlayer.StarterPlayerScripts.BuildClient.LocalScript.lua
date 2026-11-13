@@ -274,7 +274,7 @@ end
 ---------------------------------------------------------------- the catalog (left)
 -- A tall card down the left edge: search on top, categories on a rail, items in a two-wide grid.
 
-local shopWrap = wrapper("Shop", UDim2.fromOffset(404, 760), UDim2.new(0, 16, 1, -14), Vector2.new(0, 1))
+local shopWrap = wrapper("Shop", UDim2.fromOffset(404, 760), UDim2.new(1, -16, 1, -14), Vector2.new(1, 1)) -- round 33: right side
 shopWrap.Visible = false
 local shopHolder, shopBody = UI.panel(shopWrap, UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5), {
 	name = "Catalog", radius = 14, title = "Catalog", subtitle = "Pick something, then click the floor", icon = ICON.hammer,
@@ -690,7 +690,7 @@ barBtns.cancel = UI.button(bar, { text = "Cancel", icon = ICON.close, iconSize =
 
 ---------------------------------------------------------------- shape editor (right)
 
-local edWrap = wrapper("ShapeEditor", UDim2.fromOffset(290, 530), UDim2.new(1, -18, 0, 82), Vector2.new(1, 0))
+local edWrap = wrapper("ShapeEditor", UDim2.fromOffset(290, 530), UDim2.new(0, 18, 0, 140), Vector2.new(0, 0)) -- round 33: left (the catalog took the right)
 edWrap.Visible = false
 local edHolder, edBody = UI.panel(edWrap, UDim2.fromScale(1, 1), UDim2.fromScale(0.5, 0.5), {
 	name = "Editor", radius = 18, title = "Block", subtitle = "Size, colour and finish", icon = ICON.shapes,
@@ -814,12 +814,12 @@ cardBtn("close", nil, "close", "ink", 6)
 local function layout()
 	local vp = camera.ViewportSize
 	local k = kOf(shopWrap)
-	-- the catalog runs down the left edge, under the hotel plate
+	-- round 33: the catalog runs down the right edge, under the build button
 	shopWrap.Size = UDim2.fromOffset(404, math.clamp((vp.Y - 150) / k, 380, 900))
-	shopWrap.Position = UDim2.new(0, 16, 1, -14)
+	shopWrap.Position = UDim2.new(1, -16, 1, -14)
 	-- the bars sit in the middle of what's left
-	local left = 32 + 404 * k
-	local cx = left + math.max(vp.X - left - 16, 300) / 2
+	local right = 32 + 404 * k
+	local cx = 16 + math.max(vp.X - right - 16, 300) / 2
 	toolWrap.Position = UDim2.new(0, cx, 1, -14)
 	barWrap.Position = UDim2.new(0, cx, 1, -14 - 72 * kOf(toolWrap))
 	if S.building then
@@ -880,6 +880,60 @@ local function roomLabel(zone)
 	UI.stroke(f, 1.5, T.gold, 0.35)
 	local title = UI.label(f, "", 15, { FontFace = UI.F.black, TextColor3 = T.gold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 6) })
 	local info = UI.label(f, "", 12, { FontFace = UI.F.bold, TextXAlignment = Enum.TextXAlignment.Center, Position = UDim2.fromOffset(0, 29) })
+	if zone.Name ~= "Lobby" then
+		-- round 33: click the room's name to renumber it
+		bb.Active = true
+		title:Destroy()
+		title = UI.new("TextBox", { Size = UDim2.new(1, -16, 0, 22), Position = UDim2.fromOffset(8, 4), BackgroundColor3 = T.ink2, BackgroundTransparency = 0.4,
+			FontFace = UI.F.black, TextSize = 15, TextColor3 = T.gold, PlaceholderText = "Type a number", ClearTextOnFocus = true, Text = "", Parent = f })
+		UI.corner(title, 6)
+		title.FocusLost:Connect(function(enter)
+			local n = tonumber(string.match(title.Text, "%d+") or "")
+			local r = HOTEL.Rooms:FindFirstChild(zone.Name)
+			local shown = r and (r:GetAttribute("Label") or r:GetAttribute("RoomId")) or ""
+			if enter and n then
+				local ok, why = Remote:InvokeServer("label", zone.Name, n)
+				if ok then shown = why else toast(why or "Can't rename that room", nil, true) end
+			end
+			title.Text = "ROOM " .. tostring(shown)
+		end)
+	end
+	-- round 33: floors and the roof are picked here (click to cycle through Shared.Upgrades.STYLES)
+	local Up = require(Shared:WaitForChild("Upgrades"))
+	local upRemote = Shared.Remotes:WaitForChild("Upgrade")
+	bb.Active = true
+	bb.Size = UDim2.fromOffset(196, 84)
+	local function cycler(x, w, key, list, current)
+		local b = UI.new("TextButton", { Position = UDim2.fromOffset(x, 52), Size = UDim2.fromOffset(w, 24), BackgroundColor3 = T.ink2, AutoButtonColor = true,
+			FontFace = UI.F.bold, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "", Parent = f })
+		UI.corner(b, 6)
+		UI.new("UITextSizeConstraint", { MaxTextSize = 12, Parent = b })
+		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), Parent = b })
+		local function show()
+			local cur = current()
+			for _, e in ipairs(list) do
+				if e[1] == cur then b.Text = (key == "roof" and "Roof: " or "Floor: ") .. e[2] end
+			end
+		end
+		show()
+		b.Activated:Connect(function()
+			local cur, nxt = current(), list[1]
+			for i, e in ipairs(list) do
+				if e[1] == cur then nxt = list[i % #list + 1] end
+			end
+			local ok, why = upRemote:InvokeServer("style", key, nxt[1])
+			if ok then UI.sound("Turn") else toast(why or "Can't change that", nil, true) end
+			show()
+		end)
+	end
+	if zone.Name == "Lobby" then
+		cycler(8, 88, "lobby", Up.STYLES[1].list, function() return Up.style(HOTEL).lobby end)
+		cycler(100, 88, "roof", Up.STYLES[4].list, function() return Up.style(HOTEL).roof end)
+	else
+		cycler(8, 180, "room:" .. zone.Name, Up.STYLES[2].list, function()
+			return Up.decode(HOTEL:GetAttribute("RoomFloors"))[zone.Name] or Up.style(HOTEL).rooms
+		end)
+	end
 	labels[zone.Name] = { bb = bb, title = title, info = info }
 end
 
@@ -891,7 +945,7 @@ local function refreshLabels()
 		else
 			local r = HOTEL.Rooms:FindFirstChild(name)
 			if r then
-				l.title.Text = "ROOM " .. (r:GetAttribute("RoomId") or "")
+				if not l.title:IsA("TextBox") or not l.title:IsFocused() then l.title.Text = "ROOM " .. (r:GetAttribute("Label") or r:GetAttribute("RoomId") or "") end
 				l.info.Text = "Appeal " .. (r:GetAttribute("Appeal") or 0) .. "   $" .. (r:GetAttribute("Price") or C.ROOM_PRICE) .. " a night"
 			else
 				-- the room is gone (sold or never built): drop the card instead of showing a blank one
@@ -1016,17 +1070,19 @@ local function placedAt(pos)
 	local r = mouseRay(pos)
 	pickParams.FilterDescendantsInstances = { PLACED, deskModel }
 	local origin = r.Origin
+	local cut -- round 33: a cut-away wall still takes the click when nothing solid is behind it, so built walls can be edited
 	for _ = 1, 8 do
 		local hit = workspace:Raycast(origin, r.Direction * 500, pickParams)
-		if not hit then return nil end
+		if not hit then return cut end
 		-- round 28: a wall that is cut away (or the thing in hand) doesn't take the click
 		if hit.Instance.LocalTransparencyModifier < 0.5 then
 			if deskModel and hit.Instance:IsDescendantOf(deskModel) then return deskModel end
 			return Build.placedOf(hit.Instance)
 		end
+		if not cut and not (ghost and ghost.moving and hit.Instance:IsDescendantOf(ghost.moving)) then cut = Build.placedOf(hit.Instance) end
 		origin = hit.Position + r.Direction * 0.05
 	end
-	return nil
+	return cut
 end
 
 -- what the cursor rests on for the ghost: furniture tops and walls (faded facade and the item being moved don't count)
@@ -1690,7 +1746,8 @@ do
 		params.FilterType = Enum.RaycastFilterType.Include
 		params.FilterDescendantsInstances = f
 		local r = cf.RightVector
-		for _, p in ipairs(workspace:GetPartBoundsInBox(cf * CFrame.new(0, 4, 0), Vector3.new(2.4, 3, 0.3), params)) do
+		-- round 33: 1.4 deep so walls just off the line (shell walls past the floor edge) are reused
+		for _, p in ipairs(workspace:GetPartBoundsInBox(cf * CFrame.new(0, 4, 0), Vector3.new(2.4, 3, 1.4), params)) do
 			local owner = Build.placedOf(p)
 			if owner then
 				local it = Catalog.ITEMS[owner:GetAttribute("Item") or ""]

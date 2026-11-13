@@ -1105,6 +1105,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - [x] Round 30: guests' hands on the desk, card, duvet, shower tap and flush
 - [x] Round 31: first optimisation pass (traffic stubs, roof watcher, far NPCs)
 - [x] Round 32: quick fixes (night street lamps and light, build-mode night lift, centre zoom while turning, bubbles, no guest status, room builder walls only, tutorial skip, click-outside close, Rthro walk at 8, chat beeps)
+- [x] Round 33: build mode (catalogue on the right, room numbers 101+ with rename, Room Builder reuses walls, click cut-away walls to edit them, floor per room and lobby floor and roof on the build-mode cards)
 - [ ] 2026-11-12 big request (rounds 32+). Quick fixes: build-mode zoom (right-click + scroll) zooms from the screen centre, not the mouse; build mode too dark at night; street dark at night and street lights give no light; better outside lighting; remove the light on top of doors; remove the status above guests' heads; bigger NPC/staff chat bubbles with a capital first letter, and key words/names coloured and underlined; rooms number 101, 102, 103, 104 (no 201 jump) and are easy to rename; room tool: no presets, walls only; tutorial: no "skip step", only finish it or skip it all; clicking or tapping outside a menu frame closes it; smooth queue in/out; slower guests on a Roblox (Rthro) walk, fix buggy walks; player chat sfx plays fully; car tyres actually spin and better car models.
 - [ ] Build mode: catalogue on the right; flooring and roofing in build mode; the room tool can use existing walls; edit what is already built (walls, doors, rooms); new rooms fully empty (no walls inside, no bathroom area, their own flooring).
 - [ ] UI remake (don't use the current UI as a reference): every menu far better, with more content, and a few are too big; main menu; loading screen; money and guest HUD moved up and redone; notifications; day summary; talking UI; tutorial (a little smaller) and quest UI; upgrades page (drop features nobody needs); mobile sprint button; less clutter overall; keep the old bottom bar with 3D icons and match the chapter UI.
@@ -1230,6 +1231,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 - Round 30: the place is saved for you (version 345). Watch a guest check in, shower and go to bed, and tell me if any reach looks off.
 - Round 31: saved for you (version 346). Nothing to check unless the roof stops hiding while you build.
 - Round 32: saved for you (version 349). Check: a night walk down the street, build mode at night, a long chat line's sound, and how guests walk now.
+- Round 33: saved for you (version 354). Check: in build mode click a room's name card and type a new number (Enter); cycle a room's floor and the lobby floor/roof on the cards; draw a room against an existing wall; click a cut-away wall to move it.
 - Round 21: the place is saved for you. Please look at the game at night and tell me if it's dark enough now.
 - Round 20: the place is saved for you. Things only you can judge:
   - Start a **new save** to see the run-down hotel and the intro story as a new player would (or type `/intro` and `/look 0`).
@@ -1297,6 +1299,7 @@ Each one has a bed (padded headboard, duvet, pillows, a coloured runner), a nigh
 ### Changelog
 - **2026-11-12 (round 30): guests use the real things.** Their hands now land on what they use, like the staff since round 27.
 - **2026-11-12 (round 31): first optimisation pass.** Client scripts profiled (about 7 ms a frame before). Traffic cars lost 174 invisible pre-20b parts that were still moved every frame (Traffic 0.60 to 0.24 s per 6 s, BulkMoveTo 0.40 to 0.16). Roof no longer counts its descendants every frame. NPCAnim skips joint reads for far NPCs it already handed back.
+- **2026-11-12 (round 33): build mode.** The catalogue slides in from the right. Rooms show numbers 101, 102, 103... in the order they appear and you can rename one by clicking its card in build mode (the door plate follows). The Room Builder reuses walls that are already there. Cut-away walls can be clicked to edit them when nothing is behind. Each room's card picks its own floor; the lobby card picks the lobby floor and the roof.
 - **2026-11-12 (round 32): first batch of the big request.** Street lamps now light the street (their SpotLight sat at the ground inside the lamp base); nights are brighter; build mode lifts the light at night; turning with right-drag and scrolling zooms from the centre; NPC bubbles are bigger, start with a capital and colour + underline names, rooms and money; guests lost the status disc; the Room Builder only builds walls and a door; the tutorial has no Skip step (finish it or skip it all) and is 15% smaller; a click or tap outside a menu closes it; guests walk on Roblox's Rthro walk at 8 studs/s; long chat lines keep beeping to the end.
   - [x] **Checking in:** both hands on the desk's counter, a finger drum, a look round the lobby.
   - [x] **Checking out:** a bank card slid across the counter and tapped (left hand, so a bag in the right still works).
@@ -2104,6 +2107,19 @@ Script prefixes stay `RAH_` (internal; the game is called Overbooked now). Pushi
 - Backups: ServerStorage.DevTools.Round31_Backup_20261112 (Traffic, Roof, NPCAnim, Doors, Perf).
 - Server profile (10 s, slot 1): about 0.35 s of script time in total (Plots 0.17, Crowds 0.13, HotelSim guest/staff loops under 0.1 each), heartbeat 0.33 ms, physics 1.5 ms. Nothing worth fixing.
 - Not done yet: NPCAnim's per-joint cost for near NPCs, 306 lights, triangle count.
+
+### Round 33 (2026-11-12): build mode and room numbers
+- BuildClient: `shopWrap` anchors bottom-right (404x760 at 1,-16 / 1,-14) and slides in from +460; `edWrap` sits top-left (18,140); layout() centres the view in what is left of the screen.
+- Room numbers: RoomId never changes (slots, saves, tiers). ServerStorage.Rooms adds `Rooms.label(hotel, m)` (saved label, else the id when < 200, else the lowest free number from 101) and `Rooms.rename(hotel, m, n)` (whole number 1-9999, unique). Room model attribute `Label`; hotel attribute `RoomLabels` = JSON { [tostring(id)] = label }, saved as `d.labels`. Plates: every TextLabel named Text in the room (and its DoorRef door) showing the id gets `RoomPlate` and shows the label.
+- HotelSim addRoom sets `room.label` (follows the Label attribute). Every player-facing "Room N" (toasts, prompts, statuses, check-in keys and minigame data, reviews) uses room.label; Upkeep and GuestLife too. The Bag attribute and the cleaning minigame session still use room.id.
+- Save: after setting RoomLabels it clears every standing room's Label and relabels them (the built-in rooms were numbered before the save arrived).
+- BuildServer action ("label", roomModelName, n) -> Rooms.rename, fires ItemsChanged. BuildClient room cards: the title is a TextBox (bb.Active), Enter sends the rename.
+- Room Builder `sharedWall` checks 2.4 x 3 x 1.4 (was 0.3 deep), so walls just off the edge line, like shell walls past the floor edge, count as shared and are not rebuilt.
+- `placedAt`: a cut-away (faded) placed part is remembered and returned when the ray finds nothing solid behind it, so built walls and doors can be selected, moved, painted and sold.
+- Floors and roof (reusing round 22's HotelSkin styles): cards are 196x84 with cycle buttons. Lobby card: ("style","lobby",id) and ("style","roof",id). Room card: ("style","room:RoomN",id) on Remotes.Upgrade, stored in hotel attribute `RoomFloors` = JSON { RoomN = floorId } (saved as `d.roomFloors`). HotelSkin.refresh puts it in `style.roomFloors`; dress uses it for that room's Floor; watch() also listens to RoomFloors.
+- Custom rooms (HotelBuilder.customRoom) were already empty with their own carpet Floor; the bathrooms and inner walls the player sees are on the old built wing rooms 104-107 in their save, which were left alone.
+- Not checked in play: the cards render (Studio's capture skips BillboardGuis; their screen positions and sizes were checked), drawing a new room against a wall, clicking a cut-away wall.
+- Backup: ServerStorage.DevTools.Round33_Backup. Mirrors refreshed: BuildClient, HotelSim. Changed live but not mirrored: Rooms, Save, BuildServer, Upgrades (server), HotelSkin, Upkeep, GuestLife.
 
 ### Round 32 (2026-11-12): quick fixes from the big request
 - Street lamps: the lamp mesh's origin is at its base, so the SpotLight in Glow lit the ground from inside. Each workspace StreetLamp's light moved into an Attachment `Glow.LightAt` at the head (world-aligned, Face Bottom), brightness 3, range 40, angle 130. ServerStorage.CityProps.StreetLamp has no light, so nothing to change there.
