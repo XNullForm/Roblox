@@ -24,6 +24,8 @@ U.LIST = {
 		desc = "Sort out the paperwork. Wages cost a little less." },
 	{ id = "welcome", name = "Welcome Gifts", icon = "star", max = 5, base = 550, grow = 2.6, stat = "mood", add = 1,
 		desc = "A shell and a sweet on every pillow. Guests start their stay happier." },
+	{ id = "mats", name = "Doormats", icon = "clean", max = 5, base = 300, grow = 2.4, stat = "spills", mul = 0.85,
+		desc = "Big mats at every door and a mop by the desk. Fewer spills in the lobby." },
 }
 U.BY = {}
 for _, d in ipairs(U.LIST) do U.BY[d.id] = d end
@@ -95,7 +97,7 @@ function U.effect(def, level)
 	if def.add then return string.format("+%d mood", def.add * level) end
 	local k = def.mul ^ level
 	local pct = math.floor(math.abs(k - 1) * 100 + 0.5)
-	local what = ({ arrivals = "guests", price = "income", tips = "tips", patience = "patience", staffXP = "staff XP", wages = "wages" })[def.stat] or def.stat
+	local what = ({ arrivals = "guests", price = "income", tips = "tips", patience = "patience", staffXP = "staff XP", wages = "wages", spills = "spills" })[def.stat] or def.stat
 	return (k >= 1 and "+" or "-") .. pct .. "% " .. what
 end
 -- folds every bought level into a Research totals table { mul = {}, add = {} }

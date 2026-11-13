@@ -1477,15 +1477,9 @@ local function think(g, text)
 	local list = THOUGHTS[text]
 	-- round 18: their own voice first (Voice), the plain thoughts only as a fallback
 	local line = Life.Voice and Life.Voice.thought(g.model, text)
-	if line then
-	elseif list then
+	-- round 36: no more made-up "I should start <status>." (it fired mid-task: "I should start chatting with Ines.")
+	if not line and list then
 		line = #list > 0 and list[rng:NextInteger(1, #list)] or nil
-	else
-		-- "Cleaning room 102" -> "I should start cleaning room 102."
-		local first = text:match("^(%a+)")
-		if first and first:sub(-3) == "ing" and not text:find("^Waiting") and not text:find("^Leaving") then
-			line = "I should start " .. text:sub(1, 1):lower() .. text:sub(2) .. "."
-		end
 	end
 	if not line then return end
 	lastThought[g] = now
@@ -4280,13 +4274,16 @@ idleJob = function(s)
 		staffGain(s, 2)
 		return
 	end
-	if janitor and r < 0.75 then
-		local p = lobbyPoint()
+	-- round 35: a spill in the lobby (ServerStorage.Mess) comes first; the janitor mops it up
+	local spill = janitor and HOTEL:FindFirstChild("Spills") and HOTEL.Spills:GetChildren()[1]
+	if janitor and (r < 0.75 or spill) then
+		local p = spill and spill.PrimaryPart and (spill.PrimaryPart.Position + Vector3.new(1.6, 3, 0)) or lobbyPoint()
 		if p then
-			status(g, "walk", "Tidying the lobby")
+			status(g, "walk", spill and "Mopping up a spill" or "Tidying the lobby")
 			walkTo(g, p)
-			status(g, "clean", "Tidying the lobby", "blue")
+			status(g, "clean", spill and "Mopping up a spill" or "Tidying the lobby", "blue")
 			mopWork(g, range({ 3, 5 }))
+			if spill and spill.Parent then spill:Destroy() end
 			staffGain(s, 1)
 			return
 		end

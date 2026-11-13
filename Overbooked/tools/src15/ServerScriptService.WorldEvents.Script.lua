@@ -67,6 +67,7 @@ end)
 local Mess = require(game:GetService("ServerStorage"):WaitForChild("Mess"))
 local Players = game:GetService("Players")
 local Clock = require(Shared:WaitForChild("Clock"))
+local U = require(Shared:WaitForChild("Upgrades"))
 task.spawn(function()
 	while true do
 		task.wait(rng:NextNumber(70, 140))
@@ -77,7 +78,9 @@ task.spawn(function()
 			for _, plot in ipairs(plots and plots:GetChildren() or {}) do
 				local here = false
 				for _, p in ipairs(Players:GetPlayers()) do if p:GetAttribute("Plot") == plot.Name then here = true break end end
-				if here and (plot:GetAttribute("RoomsBusy") or 0) > 0 and rng:NextNumber() < chance then pcall(Mess.spill, plot) end
+				local mats = U.BY.mats.mul ^ U.level(plot, "mats") -- round 36: the Doormats upgrade
+				if here and (plot:GetAttribute("RoomsBusy") or 0) > 0 and rng:NextNumber() < chance * mats then pcall(Mess.spill, plot) end
+				if here and rng:NextNumber() < 0.22 then pcall(Mess.lost, plot) end -- round 36: lost property
 			end
 		end
 	end
