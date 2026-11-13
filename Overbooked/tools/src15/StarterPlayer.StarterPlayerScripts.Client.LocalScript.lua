@@ -1013,6 +1013,12 @@ local function makeCard(q)
 	UI.corner(tile, 14)
 	UI.stroke(tile, 1.5, T.line, 0.4)
 	local ic = UI.icon(tile, ICON[q.icon] or ICON.star, 44, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
+	if q.side then -- round 38: odd jobs get a blue tile and a tag
+		tile.BackgroundColor3 = Color3.fromRGB(222, 236, 255)
+		local tag = UI.new("Frame", { Size = UDim2.fromOffset(56, 16), Position = UDim2.new(0.5, 0, 1, 2), AnchorPoint = Vector2.new(0.5, 1), BackgroundColor3 = Color3.fromRGB(70, 130, 230), ZIndex = 4, Parent = tile })
+		UI.corner(tag, 8)
+		UI.label(tag, "ODD JOB", 10, { FontFace = UI.F.black, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 5 })
+	end
 	UI.label(card, q.text, 16, { FontFace = UI.F.heavy, TextColor3 = T.cream, Position = UDim2.fromOffset(80, 10), Size = UDim2.new(1, -90, 0, 20), TextTruncate = Enum.TextTruncate.AtEnd })
 	local track = UI.new("Frame", { Size = UDim2.new(1, -172, 0, 20), Position = UDim2.fromOffset(80, 44), BackgroundColor3 = T.ink2, Parent = card })
 	UI.corner(track, 10)
@@ -1089,7 +1095,7 @@ renderQuests = function()
 		local first = shownCh == nil
 		shownCh = st.ch
 		qChapter.Text = ch and ("CHAPTER " .. st.ch) or "ALL CHAPTERS DONE"
-		qTitle.Text = ch and ch.title or "More goals coming soon"
+		qTitle.Text = ch and ch.title or "Odd Jobs"
 		if not first then UI.pop(qHeadPill, 1.1, 0.4) end
 		-- a new chapter: the old cards go (any still finishing play out first)
 		for id, c in pairs(cards) do
@@ -1174,7 +1180,7 @@ end)
 local qSc = UI.scaleOf(qHead)
 qHead.MouseEnter:Connect(function() UI.tween(qSc, 0.18, { Scale = 1.03 }, Enum.EasingStyle.Back) end)
 qHead.MouseLeave:Connect(function() UI.tween(qSc, 0.2, { Scale = 1 }, Enum.EasingStyle.Quint) end)
-UI.tooltip(qHead, "Chapter goals: finish them for cash and XP")
+UI.tooltip(qHead, "Chapter goals and odd jobs: finish them for cash and XP")
 
 -- a chapter done: a banner across the middle, then the next chapter's name
 local function chapterBanner(d)

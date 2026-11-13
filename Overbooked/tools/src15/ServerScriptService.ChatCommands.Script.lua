@@ -385,6 +385,12 @@ local function runCommand(player, text)
 				hotel:SetAttribute("TestSpawn", true)
 				tell(player, "The next guest will be: " .. id)
 			end
+		elseif cmd == "dog" or cmd == "seagull" then -- round 38: a lobby critter now
+			local hotel = hotelOf(player)
+			if not hotel then tell(player, "Join your hotel first", true) return true end
+			if hotel:GetAttribute("Critter") then tell(player, "There's already an animal loose", true) return true end
+			local Mess = require(game.ServerStorage.Mess)
+			;(cmd == "dog" and Mess.dog or Mess.gull)(hotel)
 		elseif cmd == "intro" then
 			Notify:FireClient(player, "cutscene", { kind = "intro" })
 		elseif cmd == "look" or cmd == "upgrades" then
@@ -412,7 +418,7 @@ end
 
 -- commands: created as TextChatCommands so the chat window knows them and never shows the raw text
 local COMMANDS = { "cash", "mmoney", "research", "preset", "goto", "bring",
-	"seasonspr", "seasonsum", "seasonfal", "seasonal", "seasonaut", "seasonwin", "seasonauto", "weatherclear", "weathersun", "weathercloud", "weatherfog", "weatherrain", "weatherstorm", "weathersnow", "intro", "look", "upgrades", "commands", "eventbaby", "eventaccess", "eventpet", "eventallnighter", "eventbirthday", "eventbusiness", "eventhoneymoon", "eventsick", "eventinspector", "eventtour", "eventcelebrity", "eventrockstar", "eventroyal", "eventcritic", "eventmystery", "eventtycoon", "eventbackpacker", "eventfitness", "eventgamer", "eventspa" }
+	"seasonspr", "seasonsum", "seasonfal", "seasonal", "seasonaut", "seasonwin", "seasonauto", "weatherclear", "weathersun", "weathercloud", "weatherfog", "weatherrain", "weatherstorm", "weathersnow", "intro", "look", "upgrades", "commands", "eventbaby", "eventaccess", "eventpet", "eventallnighter", "eventbirthday", "eventbusiness", "eventhoneymoon", "eventsick", "eventinspector", "eventtour", "eventcelebrity", "eventrockstar", "eventroyal", "eventcritic", "eventmystery", "eventtycoon", "eventbackpacker", "eventfitness", "eventgamer", "eventspa", "dog", "seagull" }
 for _, name in ipairs(COMMANDS) do
 	local cmd = Instance.new("TextChatCommand")
 	cmd.Name = "" .. name

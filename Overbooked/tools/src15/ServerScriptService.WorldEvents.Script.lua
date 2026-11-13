@@ -81,6 +81,7 @@ task.spawn(function()
 				local mats = U.BY.mats.mul ^ U.level(plot, "mats") -- round 36: the Doormats upgrade
 				if here and (plot:GetAttribute("RoomsBusy") or 0) > 0 and rng:NextNumber() < chance * mats then pcall(Mess.spill, plot) end
 				if here and rng:NextNumber() < 0.22 then pcall(Mess.lost, plot) end -- round 36: lost property
+				if here and rng:NextNumber() < 0.25 then pcall(rng:NextNumber() < 0.5 and Mess.dog or Mess.gull, plot) end -- round 38: critters
 			end
 		end
 	end

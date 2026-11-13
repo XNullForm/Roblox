@@ -12,6 +12,13 @@ local Mess = {}
 local COUNT, RADIUS, PAY = 10, 22, 15
 local rng = Random.new()
 
+-- round 38: count things for goals and achievements (QuestServer listens on Signals.Quest)
+local function quest(plot, stat)
+	local s = game:GetService("ServerStorage"):FindFirstChild("Signals")
+	s = s and s:FindFirstChild("Quest")
+	if s then s:Fire(plot, stat, 1) end
+end
+
 local function part(model, props)
 	local p = Instance.new("Part")
 	p.Anchored, p.CanCollide, p.CanQuery, p.CanTouch = true, false, true, false
@@ -94,7 +101,7 @@ local function spots(plot)
 		if #out >= COUNT then break end
 		local p = seat.Position + Vector3.new(rng:NextNumber(-RADIUS, RADIUS), 6, rng:NextNumber(-RADIUS, RADIUS))
 		local hit = workspace:Raycast(p, Vector3.new(0, -12, 0), params)
-		if hit and hit.Normal.Y > 0.95 and math.abs(hit.Position.Y - (y0 - 1.5)) < 2.5 and (hit.Position - seat.Position).Magnitude > 5 then
+		if hit and hit.Normal.Y > 0.95 and math.abs(hit.Position.Y - (y0 - 1.5)) < 0.75 and --[[ round 38: was 2.5, which let sofas and armchairs count as floor ]] (hit.Position - seat.Position).Magnitude > 5 then
 			local ok = true
 			for _, q in ipairs(out) do if (q - hit.Position).Magnitude < 5 then ok = false break end end
 			-- indoors only: something of the hotel overhead (the lobby ceiling)
@@ -183,7 +190,7 @@ function Mess.spill(plot)
 	if not pos then return end
 	for _, c in ipairs(folder:GetChildren()) do if c.PrimaryPart and (c.PrimaryPart.Position - pos).Magnitude < 5 then return end end
 	local kind = SPILL_KINDS[rng:NextInteger(1, #SPILL_KINDS)]
-	place(folder, pos, kind, function() end)
+	place(folder, pos, kind, function() quest(plot, "spill") end)
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p:GetAttribute("Plot") == plot.Name then
 			Notify:FireClient(p, "toast", { text = SPILL_TEXT[kind] .. ". Clean it up for $" .. PAY, icon = "clean" })
@@ -313,6 +320,7 @@ function Mess.lost(plot)
 			p:SetAttribute("Cash", (p:GetAttribute("Cash") or 0) + REWARD)
 			p:SetAttribute("Earned", (p:GetAttribute("Earned") or 0) + REWARD)
 			Notify:FireClient(p, "toast", { text = name .. " got their " .. what .. " back. +$" .. REWARD .. " reward", icon = "cash", kind = "good" })
+			quest(plot, "lost")
 			finish()
 		end)
 	end)
@@ -331,6 +339,388 @@ function Mess.lost(plot)
 			task.wait(close and 5 or rng:NextNumber(12, 18))
 		end
 		finish()
+	end)
+	return m
+end
+
+---------------------------------------------------------------- round 38: tips and critters
+
+local function sound(parent, id, vol, speed)
+	local s = Instance.new("Sound")
+	s.SoundId = id
+	s.Volume = vol
+	s.PlaybackSpeed = speed or 1
+	s.RollOffMaxDistance = 90
+	s.Parent = parent
+	s:Play()
+	game:GetService("Debris"):AddItem(s, 5)
+end
+
+local function onPlot(plot, p) return p:GetAttribute("Plot") == plot.Name end
+
+local function pay(p, amount)
+	p:SetAttribute("Cash", (p:GetAttribute("Cash") or 0) + amount)
+	p:SetAttribute("Earned", (p:GetAttribute("Earned") or 0) + amount)
+end
+
+-- a happy guest leaves a tip on the floor where they paid (HotelSim calls this). Walk over it to grab it.
+local MAX_TIPS = 5
+function Mess.tip(plot, pos, amount)
+	if not plot or not pos then return end
+	local folder = plot:FindFirstChild("Tips")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Tips"
+		folder.Parent = plot
+	end
+	if #folder:GetChildren() >= MAX_TIPS then return end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { plot }
+	local off = Vector3.new(rng:NextNumber(-2, 2), 0, rng:NextNumber(-2, 2))
+	local hit = workspace:Raycast(pos + off + Vector3.new(0, 1, 0), Vector3.new(0, -12, 0), params)
+	if not hit then return end
+	local at = hit.Position
+	local m = Instance.new("Model")
+	m.Name = "Tip"
+	local gold = Color3.fromRGB(246, 196, 64)
+	local base
+	for i = 0, 2 do
+		local c = part(m, { Name = "Coin", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.14, 0.75, 0.75), Color = gold, Material = Enum.Material.Metal, Reflectance = 0.15,
+			CFrame = CFrame.new(at + Vector3.new(i * 0.12 - 0.12, 0.08 + i * 0.15, i * 0.08)) * CFrame.Angles(0, rng:NextNumber(0, 6.28), math.rad(90)) })
+		base = base or c
+	end
+	local note = part(m, { Name = "Note", Size = Vector3.new(1, 0.04, 0.5), Color = Color3.fromRGB(150, 200, 140), CFrame = CFrame.new(at + Vector3.new(0.5, 0.03, -0.3)) * CFrame.Angles(0, rng:NextNumber(0, 6.28), 0) })
+	local grab = part(m, { Name = "Grab", Size = Vector3.new(3.2, 4, 3.2), Transparency = 1, CanQuery = false, CFrame = CFrame.new(at + Vector3.new(0, 2, 0)) })
+	grab.CanTouch = true
+	local glow = Instance.new("PointLight")
+	glow.Color, glow.Range, glow.Brightness = gold, 6, 1.2
+	glow.Parent = base
+	local sp = Instance.new("ParticleEmitter")
+	sp.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sp.Color = ColorSequence.new(Color3.fromRGB(255, 230, 140))
+	sp.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 0.35), NumberSequenceKeypoint.new(1, 0) })
+	sp.Lifetime = NumberRange.new(0.6, 1)
+	sp.Speed = NumberRange.new(0.6, 1.4)
+	sp.SpreadAngle = Vector2.new(60, 60)
+	sp.Rate = 5
+	sp.LightEmission = 0.8
+	sp.Parent = note
+	m.PrimaryPart = base
+	m.Parent = folder
+	local taken = false
+	grab.Touched:Connect(function(h)
+		local p = Players:GetPlayerFromCharacter(h.Parent)
+		if taken or not p or not onPlot(plot, p) then return end
+		taken = true
+		pay(p, amount)
+		sound(base, "rbxassetid://9113704038", 0.6, 1.1) -- coins
+		Notify:FireClient(p, "paid", { amount = amount, pos = at + Vector3.new(0, 3, 0) })
+		quest(plot, "tip")
+		for _, x in ipairs(m:GetChildren()) do if x:IsA("BasePart") then x.Transparency = 1 end end
+		sp.Enabled, glow.Enabled = false, false
+		task.delay(1, function() m:Destroy() end)
+	end)
+	game:GetService("Debris"):AddItem(m, 120)
+	return m
+end
+
+-- critters: built at the origin facing -Z, then moved as one each frame (offsets from the root part).
+-- One at a time per hotel (plot attribute Critter). They roam between floor spots in the lobby, picking a target
+-- with a clear line to it, and run from a player who gets close.
+local CRITTER_PAY = 40
+local DOG_NAMES = { "Biscuit", "Pepper", "Noodle", "Waffles", "Bean", "Scout", "Mochi", "Pickles", "Tofu", "Ziggy" }
+local BARK, SQUAWK = "rbxassetid://9113955372", "rbxassetid://9118858259"
+
+-- offsets from a point `lift` under the root (the floor under the critter when it was built at the origin)
+local function rig(m, root, lift)
+	local parts, offs = {}, {}
+	local base = root.CFrame * CFrame.new(0, -(lift or 0), 0)
+	for _, p in ipairs(m:GetDescendants()) do
+		if p:IsA("BasePart") then
+			table.insert(parts, p)
+			offs[p] = base:ToObjectSpace(p.CFrame)
+		end
+	end
+	return parts, offs
+end
+
+local function clearLine(plot, a, b, height)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { plot }
+	local from, to = a + Vector3.new(0, height, 0), b + Vector3.new(0, height, 0)
+	local hit = workspace:Raycast(from, to - from, params)
+	return not hit or not hit.Instance.CanCollide
+end
+
+local function nearestRoot(plot, pos)
+	local best, bd
+	for _, p in ipairs(Players:GetPlayers()) do
+		local r = onPlot(plot, p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+		if r then
+			local d = (r.Position - pos).Magnitude
+			if not bd or d < bd then best, bd = r, d end
+		end
+	end
+	return best, bd or math.huge
+end
+
+-- moves the critter until stop() says so. o: speed, fleeSpeed, fleeDist, hop, fly (height while moving),
+-- pose(parts table, cf, t) for extra motion. Returns a handle with :flee() and :stop().
+local function roam(plot, m, root, list, o)
+	local parts, offs = rig(m, root, 0.95) -- both critters' bodies were built 0.95 up
+	local pos = list[1]
+	local target, speed = pos, o.speed
+	local dir = Vector3.new(0, 0, -1)
+	local alive = true
+	local h = {}
+	local function pick(away)
+		local best, score
+		for _ = 1, 8 do
+			local c = list[rng:NextInteger(1, #list)]
+			if (c - pos).Magnitude > 4 and clearLine(plot, pos, c, 1) then
+				local s = away and (c - away).Magnitude or rng:NextNumber()
+				if not score or s > score then best, score = c, s end
+			end
+		end
+		return best
+	end
+	function h.flee(from)
+		local t = pick(from)
+		if t then target, speed = t, o.fleeSpeed end
+	end
+	function h.stop() alive = false end
+	h.pos = function() return pos end
+	local t0 = os.clock()
+	local conn
+	conn = game:GetService("RunService").Heartbeat:Connect(function(dt)
+		if not alive or not m.Parent then conn:Disconnect() return end
+		local t = os.clock() - t0
+		local flat = Vector3.new(target.X - pos.X, 0, target.Z - pos.Z)
+		local moving = flat.Magnitude > 0.3
+		if moving then
+			dir = flat.Unit
+			pos += dir * math.min(flat.Magnitude, speed * dt)
+			pos = Vector3.new(pos.X, pos.Y + (target.Y - pos.Y) * math.min(1, dt * 6), pos.Z) -- rugs and carpet edges
+		elseif rng:NextNumber() < dt * 0.6 then
+			local nt = pick()
+			if nt then target, speed = nt, o.speed end
+		end
+		local r, d = nearestRoot(plot, pos)
+		if r and d < o.fleeDist and speed ~= o.fleeSpeed then h.flee(r.Position) end
+		if not moving and speed == o.fleeSpeed then speed = o.speed end
+		local y = moving and (o.fly or 0) + o.hop * math.abs(math.sin(t * 11)) or 0
+		local cf = CFrame.lookAt(pos, pos + dir) + Vector3.new(0, y, 0)
+		local cfs = table.create(#parts)
+		for i, p in ipairs(parts) do cfs[i] = cf * offs[p] end
+		if o.pose then o.pose(parts, cfs, cf, t, moving) end
+		workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged)
+	end)
+	return h
+end
+
+local function critterStart(plot)
+	if not plot or plot:GetAttribute("Critter") then return nil end
+	local list = spots(plot)
+	if #list < 3 then return nil end
+	return list
+end
+
+local function buildDog(m)
+	local coat = ({ Color3.fromRGB(196, 150, 96), Color3.fromRGB(240, 236, 226), Color3.fromRGB(60, 50, 44), Color3.fromRGB(150, 96, 60), Color3.fromRGB(226, 190, 120) })[rng:NextInteger(1, 5)]
+	local dark, light = coat:Lerp(Color3.new(0, 0, 0), 0.35), coat:Lerp(Color3.new(1, 1, 1), 0.35)
+	local F = Enum.Material.Fabric
+	local body = part(m, { Name = "Body", Size = Vector3.new(0.9, 0.8, 1.6), Color = coat, Material = F, CFrame = CFrame.new(0, 0.95, 0) })
+	part(m, { Name = "Head", Size = Vector3.new(0.8, 0.75, 0.75), Color = coat, Material = F, CFrame = CFrame.new(0, 1.5, -0.95) })
+	part(m, { Name = "Snout", Size = Vector3.new(0.45, 0.35, 0.42), Color = light, Material = F, CFrame = CFrame.new(0, 1.34, -1.45) })
+	part(m, { Name = "Nose", Size = Vector3.new(0.18, 0.14, 0.1), Color = Color3.fromRGB(26, 22, 22), CFrame = CFrame.new(0, 1.46, -1.67) })
+	for _, x in ipairs({ -1, 1 }) do
+		part(m, { Name = "Eye", Shape = Enum.PartType.Ball, Size = Vector3.new(0.13, 0.13, 0.13), Color = Color3.fromRGB(20, 20, 24), CFrame = CFrame.new(x * 0.2, 1.62, -1.33) })
+		part(m, { Name = "Ear", Size = Vector3.new(0.18, 0.45, 0.16), Color = dark, Material = F, CFrame = CFrame.new(x * 0.36, 1.66, -0.9) * CFrame.Angles(0, 0, x * math.rad(-12)) })
+		for _, z in ipairs({ -0.55, 0.55 }) do
+			part(m, { Name = "Leg", Size = Vector3.new(0.24, 0.6, 0.24), Color = coat, Material = F, CFrame = CFrame.new(x * 0.28, 0.3, z) })
+		end
+	end
+	part(m, { Name = "Collar", Size = Vector3.new(0.86, 0.16, 0.8), Color = Color3.fromRGB(210, 50, 60), CFrame = CFrame.new(0, 1.22, -0.72) })
+	part(m, { Name = "Tail", Size = Vector3.new(0.14, 0.14, 0.7), Color = coat, Material = F, CFrame = CFrame.new(0, 1.35, 0.95) * CFrame.Angles(math.rad(40), 0, 0) })
+	return body
+end
+
+-- a dog got off its lead and is having the time of its life. Catch it (walk up and press the prompt).
+function Mess.dog(plot)
+	local list = critterStart(plot)
+	if not list then return end
+	local name = DOG_NAMES[rng:NextInteger(1, #DOG_NAMES)]
+	plot:SetAttribute("Critter", "dog")
+	local m = Instance.new("Model")
+	m.Name = "Critter_Dog"
+	local body = buildDog(m)
+	m.PrimaryPart = body
+	m:PivotTo(CFrame.new(list[1]))
+	m.Parent = plot
+	local legs, tail = {}, nil
+	for _, p in ipairs(m:GetChildren()) do
+		if p.Name == "Leg" then table.insert(legs, p) elseif p.Name == "Tail" then tail = p end
+	end
+	local h = roam(plot, m, body, list, { speed = 8, fleeSpeed = 11, fleeDist = 11, hop = 0.35,
+		pose = function(parts, cfs, cf, t, moving)
+			for i, p in ipairs(parts) do
+				if p == tail then
+					cfs[i] = cfs[i] * CFrame.Angles(0, math.sin(t * 22) * 0.6, 0)
+				elseif moving and p.Name == "Leg" then
+					local k = table.find(legs, p) or 1
+					cfs[i] = cfs[i] * CFrame.new(0, 0.3, 0) * CFrame.Angles(math.sin(t * 16 + (k % 2) * math.pi) * 0.7, 0, 0) * CFrame.new(0, -0.3, 0)
+				end
+			end
+		end })
+	local done = false
+	local function finish()
+		if done then return end
+		done = true
+		h.stop()
+		if plot.Parent then plot:SetAttribute("Critter", nil) end
+	end
+	local pr = Instance.new("ProximityPrompt")
+	pr.ActionText = "Catch"
+	pr.ObjectText = name
+	pr.HoldDuration = 0
+	pr.MaxActivationDistance = 8
+	pr.RequiresLineOfSight = false
+	pr.Parent = body
+	pr.Triggered:Connect(function(p)
+		if done or not onPlot(plot, p) then return end
+		finish()
+		pay(p, CRITTER_PAY)
+		quest(plot, "critter")
+		sound(body, BARK, 0.7, 1.6)
+		Notify:FireClient(p, "paid", { amount = CRITTER_PAY, pos = body.Position + Vector3.new(0, 3, 0) })
+		toastPlot(plot, { text = p.DisplayName .. " caught " .. name .. "! Their owner says thanks. +$" .. CRITTER_PAY, icon = "ev_pet", kind = "good" })
+		puff(body.Position)
+		m:Destroy()
+	end)
+	toastPlot(plot, { text = "A dog called " .. name .. " is loose in the lobby! Catch it!", icon = "ev_pet" })
+	task.spawn(function()
+		local t0 = os.clock()
+		while not done and m.Parent and os.clock() - t0 < 150 do
+			sound(body, BARK, 0.55, rng:NextNumber(1.5, 1.75))
+			task.wait(rng:NextNumber(3, 7))
+		end
+		if not done then
+			finish()
+			if m.Parent then puff(body.Position) m:Destroy() end
+			toastPlot(plot, { text = name .. " ran back to their owner.", icon = "ev_pet" })
+		end
+	end)
+	return m
+end
+
+local function buildGull(m)
+	local white, grey, orange = Color3.fromRGB(246, 246, 248), Color3.fromRGB(150, 158, 170), Color3.fromRGB(240, 160, 40)
+	local body = part(m, { Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(0.8, 0.75, 1.3), Color = white, CFrame = CFrame.new(0, 0.95, 0) })
+	part(m, { Name = "Back", Size = Vector3.new(0.7, 0.2, 1), Color = grey, CFrame = CFrame.new(0, 1.25, 0.1) })
+	part(m, { Name = "Head", Shape = Enum.PartType.Ball, Size = Vector3.new(0.55, 0.55, 0.55), Color = white, CFrame = CFrame.new(0, 1.45, -0.6) })
+	part(m, { Name = "Beak", Size = Vector3.new(0.14, 0.14, 0.45), Color = orange, CFrame = CFrame.new(0, 1.4, -1.02) })
+	for _, x in ipairs({ -1, 1 }) do
+		part(m, { Name = "Eye", Shape = Enum.PartType.Ball, Size = Vector3.new(0.1, 0.1, 0.1), Color = Color3.fromRGB(20, 20, 24), CFrame = CFrame.new(x * 0.2, 1.55, -0.75) })
+		part(m, { Name = x < 0 and "WingL" or "WingR", Size = Vector3.new(1.1, 0.08, 0.6), Color = grey, CFrame = CFrame.new(x * 0.9, 1.2, 0.1) })
+		part(m, { Name = "Leg", Size = Vector3.new(0.08, 0.6, 0.08), Color = orange, CFrame = CFrame.new(x * 0.15, 0.3, 0.05) })
+	end
+	part(m, { Name = "Tail", Size = Vector3.new(0.5, 0.08, 0.4), Color = Color3.fromRGB(40, 40, 46), CFrame = CFrame.new(0, 1.05, 0.75) })
+	return body
+end
+
+-- a seagull flew in through the front door and wants chips. Shoo it three times and it flies off.
+local SHOOS = 3
+function Mess.gull(plot)
+	local list = critterStart(plot)
+	if not list then return end
+	plot:SetAttribute("Critter", "gull")
+	local m = Instance.new("Model")
+	m.Name = "Critter_Gull"
+	local body = buildGull(m)
+	m.PrimaryPart = body
+	m:PivotTo(CFrame.new(list[1]))
+	m.Parent = plot
+	local flapping = 0
+	local h = roam(plot, m, body, list, { speed = 5, fleeSpeed = 18, fleeDist = 0, hop = 0.15,
+		pose = function(parts, cfs, cf, t, moving)
+			local fly = moving and os.clock() < flapping
+			for i, p in ipairs(parts) do
+				if fly then cfs[i] = cfs[i] + Vector3.new(0, 2.5 * math.min(1, (flapping - os.clock())), 0) end
+				if p.Name == "WingL" or p.Name == "WingR" then
+					local s = p.Name == "WingL" and 1 or -1
+					local a = fly and math.sin(t * 24) * 0.9 or 0.15
+					cfs[i] = cf * CFrame.new(-s * 0.4, 1.2, 0.1) * CFrame.Angles(0, 0, s * a) * CFrame.new(-s * 0.5, 0, 0) + (fly and Vector3.new(0, 2.5 * math.min(1, flapping - os.clock()), 0) or Vector3.zero)
+				end
+			end
+		end })
+	local shoos, done = 0, false
+	local function finish()
+		if done then return end
+		done = true
+		h.stop()
+		if plot.Parent then plot:SetAttribute("Critter", nil) end
+	end
+	-- flies up and away, then gone
+	local function leave()
+		local start = body.CFrame
+		local away = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1)).Unit
+		local parts, offs = rig(m, body)
+		local t0 = os.clock()
+		local conn
+		conn = game:GetService("RunService").Heartbeat:Connect(function()
+			local t = os.clock() - t0
+			if t > 2.5 or not m.Parent then conn:Disconnect() m:Destroy() return end
+			local cf = CFrame.lookAt(start.Position, start.Position + away) + away * t * 14 + Vector3.new(0, t * 9, 0)
+			local cfs = {}
+			for i, p in ipairs(parts) do
+				cfs[i] = cf * offs[p]
+				if p.Name == "WingL" or p.Name == "WingR" then
+					local s = p.Name == "WingL" and 1 or -1
+					cfs[i] = cf * CFrame.new(-s * 0.4, 0.25, 0.1) * CFrame.Angles(0, 0, s * math.sin(t * 26) * 1) * CFrame.new(-s * 0.5, 0, 0)
+				end
+				p.Transparency = math.max(p.Transparency, math.clamp((t - 1.5), 0, 1))
+			end
+			workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged)
+		end)
+	end
+	local pr = Instance.new("ProximityPrompt")
+	pr.ActionText = "Shoo!"
+	pr.ObjectText = "Seagull"
+	pr.HoldDuration = 0
+	pr.MaxActivationDistance = 10
+	pr.RequiresLineOfSight = false
+	pr.Parent = body
+	pr.Triggered:Connect(function(p)
+		if done or not onPlot(plot, p) then return end
+		shoos += 1
+		sound(body, SQUAWK, 0.6, rng:NextNumber(0.95, 1.1))
+		if shoos >= SHOOS then
+			finish()
+			pay(p, CRITTER_PAY)
+			quest(plot, "critter")
+			Notify:FireClient(p, "paid", { amount = CRITTER_PAY, pos = body.Position + Vector3.new(0, 3, 0) })
+			toastPlot(plot, { text = "The seagull is gone. The guests clap! +$" .. CRITTER_PAY, icon = "happy", kind = "good" })
+			leave()
+		else
+			pr.ObjectText = "Seagull (" .. (SHOOS - shoos) .. " more)"
+			flapping = os.clock() + 1.6
+			h.flee(p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.HumanoidRootPart.Position or body.Position)
+		end
+	end)
+	toastPlot(plot, { text = "A seagull flew into the lobby! Shoo it out!", icon = "happy" })
+	task.spawn(function()
+		local t0 = os.clock()
+		while not done and m.Parent and os.clock() - t0 < 150 do
+			if rng:NextNumber() < 0.5 then sound(body, SQUAWK, 0.45, rng:NextNumber(0.95, 1.1)) end
+			task.wait(rng:NextNumber(5, 10))
+		end
+		if not done then
+			finish()
+			if m.Parent then leave() end
+			toastPlot(plot, { text = "The seagull flew off with someone's sandwich.", icon = "happy" })
+		end
 	end)
 	return m
 end

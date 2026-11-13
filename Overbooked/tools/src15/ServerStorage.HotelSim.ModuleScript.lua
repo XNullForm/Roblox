@@ -3200,6 +3200,11 @@ local function guestLife(g)
 	quest("guests")
 	quest("earn", pay)
 	if rstars >= 5 then quest("review5") end
+	-- round 38: a happy guest leaves a tip on the floor by the desk; walk over it to grab it (ServerStorage.Mess)
+	if rstars >= 4 and rng:NextNumber() < 0.6 then
+		local okM, Mess = pcall(require, game.ServerStorage:FindFirstChild("Mess"))
+		if okM then pcall(Mess.tip, HOTEL, g.root.Position, math.max(5, math.floor(pay * 0.12))) end
+	end
 	tell("review", { name = g.name, stars = rstars, text = rtext, room = room.label })
 	say(g, rstars >= 4 and pick(C.LINES.checkout) or (rstars <= 2 and "I won't be back." or "Thanks, bye."), 3)
 	Notify:FireAllClients("paid", { amount = pay, pos = g.head.Position + Vector3.new(0, 3, 0) })
