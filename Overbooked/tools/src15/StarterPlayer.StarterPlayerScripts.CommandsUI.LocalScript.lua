@@ -37,6 +37,7 @@ local GROUPS = {
 		{ "/eventtour", "A tour group" }, { "/eventcelebrity", "A celebrity" }, { "/eventrockstar", "Star guest: the rock star" },
 		{ "/eventroyal", "Star guest: royalty" }, { "/eventcritic", "Star guest: the critic" }, { "/eventmystery", "Star guest: the mystery guest" },
 		{ "/eventtycoon", "Star guest: the tycoon" },
+		{ "/eventbackpacker", "A backpacker" }, { "/eventfitness", "A fitness fan" }, { "/eventgamer", "A gamer" }, { "/eventspa", "A spa lover" },
 	} },
 	{ "Players", {
 		{ "/goto name", "Teleport to a player" },

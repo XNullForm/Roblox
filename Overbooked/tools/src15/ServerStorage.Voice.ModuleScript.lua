@@ -358,8 +358,8 @@ do
 			foodie = { "Hi! I'm %s. Quick question: is breakfast included?", "%s! Hello! Something smells amazing in here.", "Hey, I'm %s. I came for the restaurants, honestly." },
 			nerd = { "Hello. %s. Fun fact: the word hotel comes from French.", "Hi, I'm %s. I read 214 reviews before booking.", "%s. Is the wifi 5 gigahertz? Asking for me." },
 			dreamer = { "Hello... I'm %s. What a beautiful little place.", "%s. I hope the room has a window. I like to watch the clouds.", "Hi, I'm %s. I think I've dreamed about this lobby." },
-			sporty = { "Hey! %s! Just ran here from the station!", "%s. Got a gym? Asking for a friend. The friend is me.", "What's up, I'm %s! Big race this weekend." },
-			tourist = { "Hi! %s! First time in this city!", "Hello! I'm %s. Can I take a picture of the desk?", "%s here! Which way to the famous stuff?" },
+			sporty = { "Hey! I'm %s! Just ran here from the station!", "%s. Got a gym? Asking for a friend. The friend is me.", "What's up, I'm %s! Big race this weekend." },
+			tourist = { "Hi! I'm %s! First time in this city!", "Hello! I'm %s. Can I take a picture of the desk?", "%s here! Which way to the famous stuff?" },
 		},
 		waitLine = {
 			country = { "Slow as molasses, this line.", "I've waited on cows that moved quicker." },
@@ -564,7 +564,7 @@ function V.flavor(model, line)
 	elseif v == "nervous" and r < 0.3 then line = "Um, " .. line:sub(1, 1):lower() .. line:sub(2)
 	elseif v == "grump" and r < 0.2 then line = line .. " Typical."
 	elseif v == "posh" then line = line:gsub("[Gg]reat", "splendid"):gsub("[Aa]wesome", "marvellous"):gsub("[Rr]eally", "terribly")
-	elseif v == "nan" and r < 0.3 then line = line:gsub("[%.!]$", "") .. ", dear."
+	elseif v == "nan" and r < 0.3 then line = line:gsub("[%.!?]+$", "") .. (line:sub(-1) == "?" and ", dear?" or ", dear.") -- round 37: was "You?, dear."
 	elseif v == "teen" and r < 0.6 then line = line:lower():gsub("%.$", "")
 	elseif v == "chill" and r < 0.2 then line = "Honestly? " .. line
 	elseif v == "chatter" and r < 0.25 then line = line .. " Anyway!"
@@ -572,7 +572,7 @@ function V.flavor(model, line)
 	elseif v == "country" and r < 0.25 then line = line:gsub("ing([%s%p])", "in'%1")
 	elseif v == "sporty" and r < 0.2 then line = line .. " Let's go!"
 	elseif v == "nerd" and r < 0.15 then line = "Technically, " .. line:sub(1, 1):lower() .. line:sub(2)
-	elseif v == "dreamer" and r < 0.25 then line = line:gsub("[%.!]$", "...")
+	elseif v == "dreamer" and r < 0.25 then line = line:gsub("[%.!]+$", "...")
 	elseif v == "tourist" and r < 0.2 then line = "Wow! " .. line
 	elseif v == "foodie" and r < 0.12 then line = line .. " Also, I'm hungry."
 	end
