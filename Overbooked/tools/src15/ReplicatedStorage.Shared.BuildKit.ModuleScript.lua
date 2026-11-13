@@ -23,8 +23,12 @@ local UI = require(Shared:WaitForChild("UI"))
 local T = UI.T
 local ICON = C.ICONS
 local WHITE = Color3.new(1, 1, 1)
-local MUTED = Color3.fromRGB(170, 186, 212)
-local CHIP = Color3.fromRGB(44, 58, 84)
+-- round 45: every build panel wears the HUD's white glossy plate (was dark glass)
+local INK = Color3.fromRGB(34, 44, 64)
+local MUTED = Color3.fromRGB(96, 108, 130)
+local CHIP = Color3.fromRGB(240, 244, 250)
+local CHIP_HOVER = Color3.fromRGB(222, 232, 248)
+local LINE = Color3.fromRGB(214, 222, 234)
 local CHIP_ON = Color3.fromRGB(62, 120, 230)
 local GOOD = Color3.fromRGB(110, 235, 140)
 local BAD = Color3.fromRGB(255, 96, 96)
@@ -53,13 +57,12 @@ return function(api)
 		if #S.undo > 20 then table.remove(S.undo, 1) end
 	end
 
-	-- dark glass, the look of every bar and panel here
+	-- the HUD's white glossy plate, the look of every bar and panel here
 	local function glass(f, r)
 		f.BackgroundColor3 = WHITE
-		f.BackgroundTransparency = 0.02
 		UI.corner(f, r or 18)
-		UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(40, 54, 80), Color3.fromRGB(20, 28, 44)), Parent = f })
-		UI.stroke(f, 1.5, Color3.fromRGB(74, 94, 128), 0.05)
+		UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = f })
+		UI.rim(f, Color3.fromRGB(232, 237, 244), 2.5)
 	end
 	-- round 44: the tool rail wears the HUD's white glossy plate (cash, guests, clock, bottom bar)
 	local RAIL_CHIP, RAIL_HOVER, RAIL_TEXT = Color3.fromRGB(240, 244, 250), Color3.fromRGB(222, 232, 248), Color3.fromRGB(96, 108, 130)
@@ -72,7 +75,7 @@ return function(api)
 	local function txt(parent, text, size, props)
 		props = props or {}
 		props.FontFace = props.FontFace or UI.F.heavy
-		props.TextColor3 = props.TextColor3 or WHITE
+		props.TextColor3 = props.TextColor3 or INK
 		props.BackgroundTransparency = 1
 		return UI.label(parent, text, size, props)
 	end
@@ -91,7 +94,7 @@ return function(api)
 			b.TextColor3 = v and WHITE or MUTED
 			st.Color = v and Color3.fromRGB(140, 180, 255) or Color3.fromRGB(80, 100, 136)
 		end
-		b.MouseEnter:Connect(function() if not on then b.BackgroundColor3 = Color3.fromRGB(56, 72, 102) end UI.sound("Hover") end)
+		b.MouseEnter:Connect(function() if not on then b.BackgroundColor3 = CHIP_HOVER end UI.sound("Hover") end)
 		b.MouseLeave:Connect(function() set(on) end)
 		b.Activated:Connect(function()
 			UI.sound("Tick")
@@ -1321,17 +1324,17 @@ return function(api)
 	for r, pair in ipairs({ { { "x", "X" }, { "z", "Z" } }, { { "h", "Height" }, { "a", "Angle" } } }) do
 		fieldRow = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, LayoutOrder = r, Parent = advBody })
 		for i, f in ipairs(pair) do
-			local cell = UI.new("Frame", { Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new((i - 1) * 0.5, (i - 1) * 4, 0, 0), BackgroundColor3 = Color3.fromRGB(14, 20, 32), Parent = fieldRow })
+			local cell = UI.new("Frame", { Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new((i - 1) * 0.5, (i - 1) * 4, 0, 0), BackgroundColor3 = WHITE, Parent = fieldRow })
 			UI.corner(cell, 10)
-			local st = UI.stroke(cell, 1.5, Color3.fromRGB(74, 94, 128), 0)
+			local st = UI.stroke(cell, 1.5, LINE, 0)
 			txt(cell, f[2], 14, { TextColor3 = MUTED, Position = UDim2.fromOffset(10, 0), Size = UDim2.new(0, 56, 1, 0) })
 			local box = UI.new("TextBox", {
-				Text = "0", TextSize = 17, FontFace = UI.F.heavy, TextColor3 = WHITE, BackgroundTransparency = 1, ClearTextOnFocus = false,
+				Text = "0", TextSize = 17, FontFace = UI.F.heavy, TextColor3 = INK, BackgroundTransparency = 1, ClearTextOnFocus = false,
 				TextXAlignment = Enum.TextXAlignment.Right, Position = UDim2.new(0, 60, 0, 0), Size = UDim2.new(1, -70, 1, 0), Parent = cell,
 			})
 			box.Focused:Connect(function() st.Color = T.brand end)
 			box.FocusLost:Connect(function(enter)
-				st.Color = Color3.fromRGB(74, 94, 128)
+				st.Color = LINE
 				if enter then applyFields(f[1]) end
 			end)
 			fields[f[1]] = box
@@ -1347,7 +1350,7 @@ return function(api)
 			UI.corner(b, 10)
 			UI.stroke(b, 1.5, Color3.fromRGB(80, 100, 136), 0.2)
 			UI.icon(b, icon, 22, { Rotation = rot, Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5) })
-			b.MouseEnter:Connect(function() b.BackgroundColor3 = Color3.fromRGB(58, 76, 108) end)
+			b.MouseEnter:Connect(function() b.BackgroundColor3 = CHIP_HOVER end)
 			b.MouseLeave:Connect(function() b.BackgroundColor3 = CHIP end)
 			b.Activated:Connect(function() UI.sound("Tick") UI.pop(b, 0.85, 0.15) fn() end)
 			UI.tooltip(b, tipText)

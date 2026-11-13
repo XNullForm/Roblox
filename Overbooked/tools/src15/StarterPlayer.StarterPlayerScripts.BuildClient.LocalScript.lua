@@ -19,7 +19,11 @@ local Levels = require(Shared:WaitForChild("Levels"))
 local UI = require(Shared:WaitForChild("UI"))
 local Remote = Shared.Remotes:WaitForChild("Build")
 local ITEMS = Shared:WaitForChild("Items")
-local T = UI.T
+-- round 45: the key strip and the place bar wear the HUD's white plates (the hud colours were dark glass)
+local T = setmetatable({
+	hud = Color3.fromRGB(255, 255, 255), hud2 = Color3.fromRGB(240, 244, 250), hudLine = Color3.fromRGB(214, 222, 234),
+	hudText = Color3.fromRGB(34, 44, 64), hudMuted = Color3.fromRGB(96, 108, 130),
+}, { __index = UI.T })
 
 local player = Players.LocalPlayer
 local pgui = player:WaitForChild("PlayerGui")
