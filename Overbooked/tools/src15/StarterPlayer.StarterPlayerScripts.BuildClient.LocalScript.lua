@@ -648,11 +648,31 @@ gridTex.Color3 = Color3.fromRGB(255, 226, 150)
 gridTex.Transparency = 0.25
 gridTex.Parent = gridPlate
 
+-- round 43: a faint grid over the whole plot (the Grounds zone) while building. 4-stud cells: finer lines
+-- fade out at build-camera distance. Every snap step (.25 to 4) lands on them.
+local groundGrid = gridPlate:Clone()
+groundGrid.Name = "GroundGrid"
+local groundTex = groundGrid:FindFirstChildOfClass("Texture")
+groundTex.Color3, groundTex.Transparency = Color3.fromRGB(30, 60, 100), 0.45
+groundTex.StudsPerTileU, groundTex.StudsPerTileV = 64, 64
+function S.groundGrid()
+	local zone = ZONES:FindFirstChild("Grounds")
+	if not S.building or S.grid <= 0 or not zone then groundGrid.Parent = nil return end
+	if not groundGrid.Parent then
+		local function e(v) return math.floor(v / 4 + 0.5) * 4 end
+		local x0, x1 = e(zone.Position.X - zone.Size.X / 2), e(zone.Position.X + zone.Size.X / 2)
+		local z0, z1 = e(zone.Position.Z - zone.Size.Z / 2), e(zone.Position.Z + zone.Size.Z / 2)
+		groundGrid.Size = Vector3.new(x1 - x0, 0.05, z1 - z0)
+		groundGrid.CFrame = CFrame.new((x0 + x1) / 2, Build.FY + 0.03, (z0 + z1) / 2)
+		groundGrid.Parent = localFolder
+	end
+end
+
 ---------------------------------------------------------------- build camera
 
 local cam = { focus = Vector3.new(0, Build.FY, 0), yaw = 0, pitch = math.rad(52), dist = 62 }
 local goal = { focus = cam.focus, yaw = 0, pitch = cam.pitch, dist = cam.dist }
-local BOUNDS = { -46, 46, -38, 58 } -- round 10e: reaches the car park
+local BOUNDS = { -157, 157, -198, 58 } -- round 43: the whole lot (round 10e: reached the car park)
 local held = {}
 local pad = { move = Vector2.zero, look = Vector2.zero, zin = 0, zout = 0 } -- controller sticks and triggers
 local input = { rightDown = false, rightMoved = 0, touches = {}, clickDown = nil, uiClicked = 0 }
@@ -2862,6 +2882,7 @@ end)
 ---------------------------------------------------------------- per frame
 
 RunService.RenderStepped:Connect(function(dt)
+	S.groundGrid()
 	if not S.building then return end
 	S.cutStep(dt)
 	if input.clickDown and not input.mode and not ghost and not TOUCH and (UIS:GetMouseLocation() - input.clickDown).Magnitude > 7 then

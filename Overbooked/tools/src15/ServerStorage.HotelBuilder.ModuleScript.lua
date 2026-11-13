@@ -1993,7 +1993,56 @@ end
 -- nothing else. Lot decor (trees, bushes, planters, benches) standing on them is cleared away.
 B.PARKING = { { -60, -16 }, { 16, 60 } } -- x ranges; z from 33 to 55
 B.PARK_Z = { 33, 55 }
+
+---------------------------------------------------------------- the grounds (round 43)
+-- The whole city lot round the hotel is yours to decorate: a "Grounds" build zone (Shared.Build leaves the
+-- building's own footprint out of it). The lot reaches back to z -198 now (it stopped at -98), its hedges moved
+-- to match. The lawn there is a part level with the hotel floor (terrain grass sat a stud above it), so outdoor
+-- items stand on it at Build.FY like everything indoors; the lot's trees, garden and benches come down a stud.
+B.GROUNDS = { x = 157, z0 = -198, z1 = 31 }
+function B.grounds(hotel)
+	useOrigin(hotel)
+	local zones = hotel:FindFirstChild("BuildZones")
+	if not zones or zones:FindFirstChild("Grounds") then return end
+	local G = B.GROUNDS
+	local gz = zonePart(zones, "Grounds", Vector2.new(-G.x + 0.5, G.z0 + 0.5), Vector2.new(G.x - 0.5, G.z1))
+	gz.Size = Vector3.new(gz.Size.X, 0.2, gz.Size.Z)
+	gz.Position = Vector3.new(gz.Position.X, FY + OX.Y, gz.Position.Z)
+	gz:SetAttribute("Outdoor", true)
+	local lots = workspace:FindFirstChild("City") and workspace.City:FindFirstChild("Lots")
+	local lot
+	for _, l in ipairs(lots and lots:GetChildren() or {}) do
+		local h = l:FindFirstChild("BackHedge")
+		if h and math.abs(h.Position.X - OX.X) < 1 then lot = l end
+	end
+	if not lot or lot:GetAttribute("Grounds") then return end
+	lot:SetAttribute("Grounds", true)
+	local cz = (G.z0 + G.z1) / 2
+	local t = workspace.Terrain
+	t:FillBlock(CFrame.new(OX + Vector3.new(0, FY - 1, cz)), Vector3.new(2 * G.x, 8, G.z1 - G.z0), Enum.Material.Air)
+	-- the lot's own trees and benches stood on the old lawn: bring them down onto the new one
+	for _, d in ipairs(lot:GetChildren()) do
+		local skip = { Hedge = true, BackHedge = true, Apron = true, Path = true, PathEdge = true, Plaza = true }
+		if not skip[d.Name] and (d:IsA("Model") or d:IsA("BasePart")) then
+			local p = d:GetPivot().Position - OX
+			if math.abs(p.X) < G.x and p.Z > G.z0 and p.Z < G.z1 then d:PivotTo(d:GetPivot() - Vector3.new(0, 1, 0)) end
+		end
+	end
+	block(lot, "Lawn", Vector3.new(-G.x, FY - 5, G.z0), Vector3.new(G.x, FY - 0.05, G.z1), t:GetMaterialColor(Enum.Material.LeafyGrass), Enum.Material.LeafyGrass)
+	-- hedges round the bigger lot
+	local back = lot:FindFirstChild("BackHedge")
+	back.Position = Vector3.new(back.Position.X, back.Position.Y, OX.Z + G.z0 - 1.5)
+	for _, h in ipairs(lot:GetChildren()) do
+		if h.Name == "Hedge" and h:IsA("BasePart") then
+			local front = h.Position.Z + h.Size.Z / 2
+			h.Size = Vector3.new(h.Size.X, h.Size.Y, front - (OX.Z + G.z0 - 3))
+			h.Position = Vector3.new(h.Position.X, h.Position.Y, front - h.Size.Z / 2)
+		end
+	end
+end
+
 function B.parking(hotel)
+	pcall(B.grounds, hotel)
 	useOrigin(hotel)
 	local zones = hotel:FindFirstChild("BuildZones")
 	if not zones or zones:FindFirstChild("Parking") then return end

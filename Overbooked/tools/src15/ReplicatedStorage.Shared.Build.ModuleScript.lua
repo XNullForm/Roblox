@@ -154,21 +154,49 @@ function B.pivot(x, y, z, yaw)
 	return CFrame.new(x, B.FY + (y or 0), z) * CFrame.Angles(0, math.rad(yaw or 0), 0)
 end
 
+-- round 43: the building's own footprint (its walls and plinth), which the Grounds zone leaves out
+function B.inHotel(hotel, p)
+	local o = hotel:GetAttribute("Origin") or Vector3.zero
+	local x, z = p.X - o.X, p.Z - o.Z
+	return x > (hotel:GetAttribute("MinX") or -39.5) - 2.5 and x < (hotel:GetAttribute("MaxX") or 39.5) + 2.5 and z > -32.5 and z < 37
+end
+
 function B.zoneAt(p)
 	local hotel = B.hotelAt(p)
 	if not hotel then return nil end
-	-- a room wins over the lobby (rooms made with walls sit on top of lobby floor)
-	local lobby
+	-- a room wins over the lobby (rooms made with walls sit on top of lobby floor); the Grounds outside lose to both
+	local lobby, grounds
 	for _, z in ipairs(hotel.BuildZones:GetChildren()) do
 		if z:IsA("BasePart") then
 			local l = z.CFrame:PointToObjectSpace(p)
 			if math.abs(l.X) <= z.Size.X / 2 and math.abs(l.Z) <= z.Size.Z / 2 then
-				if z.Name ~= "Lobby" then return z end
-				lobby = lobby or z
+				if z.Name == "Grounds" then
+					grounds = z
+				elseif z.Name ~= "Lobby" then
+					return z
+				else
+					lobby = lobby or z
+				end
 			end
 		end
 	end
-	return lobby
+	if lobby then return lobby end
+	return grounds and not B.inHotel(hotel, p) and grounds or nil
+end
+
+-- round 43: the city lot a hotel stands on (its trees, garden and hedges block outdoor building)
+local lotCache = setmetatable({}, { __mode = "k" })
+function B.lotOf(hotel)
+	local c = lotCache[hotel]
+	if c ~= nil then return c or nil end
+	local o = hotel:GetAttribute("Origin") or Vector3.zero
+	local lots = workspace:FindFirstChild("City") and workspace.City:FindFirstChild("Lots")
+	for _, l in ipairs(lots and lots:GetChildren() or {}) do
+		local h = l:FindFirstChild("BackHedge")
+		if h and math.abs(h.Position.X - o.X) < 1 then lotCache[hotel] = l return l end
+	end
+	lotCache[hotel] = false
+	return nil
 end
 
 function B.placedOf(part)
@@ -187,6 +215,8 @@ local function getBlockers(hotel)
 		if f then table.insert(blockers, f) end
 	end
 	table.insert(blockers, hotel.BuildZones.NoBuild)
+	local lot = B.lotOf(hotel)
+	if lot then table.insert(blockers, lot) end
 	return blockers
 end
 
@@ -320,7 +350,6 @@ function B.validate(itemId, cf, ignore, opts)
 	local lift = y0 - B.FY
 	if lift < -0.05 then return false, "Keep it above the floor" end
 	if lift > 0.05 and B.floorOnly(itemId) then return false, "That stands on the floor" end
-	if not item.structure and bcf.Position.Y + size.Y / 2 > B.CEIL + 0.05 then return false, "Too tall for the ceiling" end
 	local zone
 	-- walls and doors are checked along their centre line, a little in from each end, so one can butt into the
 	-- hotel's own walls (whose thickness lies outside the build zones) and close off a room
@@ -330,7 +359,7 @@ function B.validate(itemId, cf, ignore, opts)
 		for _, sz in ipairs({ -1, 1 }) do
 			local p = bcf * Vector3.new(sx * ex, 0, sz * ez)
 			local z = B.zoneAt(Vector3.new(p.X, y0, p.Z))
-			if not z then return false, item.wall and "Hang it on a wall inside" or "Keep it inside the hotel" end
+			if not z then return false, item.wall and "Hang it on a wall" or "Keep it on your plot" end
 			-- walls and doors are what make rooms, so they may stand on a room's edge
 			if zone and z.Name ~= zone.Name and not item.structure then return false, "Keep it inside one room" end
 			if not zone or (item.structure and z.Name == "Lobby") then zone = z end
@@ -338,11 +367,13 @@ function B.validate(itemId, cf, ignore, opts)
 	end
 	local hotel = zone.Parent.Parent
 	local NOBUILD = hotel.BuildZones.NoBuild
+	-- round 43: the Grounds are open sky, so only indoors has a ceiling
+	if not item.structure and zone.Name ~= "Grounds" and bcf.Position.Y + size.Y / 2 > B.CEIL + 0.05 then return false, "Too tall for the ceiling" end
 	-- round 10e: the car park out front takes parking spots, and only those
 	if zone.Name == "Parking" and not item.outdoor then return false, "That goes inside the hotel" end
 	if item.outdoor and zone.Name ~= "Parking" then return false, "Put it in the car park out front" end
 	-- a room's bed/shower/toilet belongs in a guest room, never the lobby
-	if (item.core or item.coreKind or item.room) and zone.Name == "Lobby" then
+	if (item.core or item.coreKind or item.room) and (zone.Name == "Lobby" or zone.Name == "Grounds") then
 		return false, "That belongs in a guest room"
 	end
 	if (item.core or item.coreKind) and ignore and zone.Name ~= ignore:GetAttribute("Room") then
