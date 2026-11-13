@@ -76,6 +76,32 @@ local STEPS = {
 		button = "Let's go",
 	},
 	{
+		-- round 35: the story start: Aunt Marigold left rubbish all over the lobby (ServerStorage.Mess)
+		icon = "clean", title = "Clean up the mess",
+		body = "Aunt Marigold left the place in a state. Hold E on each pile of rubbish to clean it up. Nobody books a tip!",
+		bodyTouch = "Aunt Marigold left the place in a state. Hold the button on each pile of rubbish to clean it up.",
+		target = function()
+			local h, r = hotel(), root()
+			local best, bd
+			for _, m in ipairs(CollectionService:GetTagged("Mess")) do
+				if h and m:IsDescendantOf(h) and m.PrimaryPart then
+					local d = r and (m.PrimaryPart.Position - r.Position).Magnitude or 0
+					if not bd or d < bd then best, bd = m, d end
+				end
+			end
+			return best and best.PrimaryPart.Position + Vector3.new(0, 2, 0)
+		end,
+		done = function()
+			local h = hotel()
+			return not h or (h:GetAttribute("MessLeft") or 0) <= 0
+		end,
+		waiting = function()
+			local h = hotel()
+			local n = h and h:GetAttribute("MessLeft")
+			return n and n > 0 and (n .. " left to clean") or nil
+		end,
+	},
+	{
 		-- round 22: the hotel starts empty, so the first job is a room guests can sleep in
 		icon = "bed", title = "Open your first room",
 		body = "Press B to build. Put a Bed, a Shower and a Toilet in one of the rooms at the back. A room opens as soon as it has all three.",

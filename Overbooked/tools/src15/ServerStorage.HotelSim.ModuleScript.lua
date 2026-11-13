@@ -161,9 +161,11 @@ local function drawPile()
 		local k = i - 1
 		local layer = k // 6
 		local slot = k % 6
-		local x = (slot % 2) * 1.7 - 0.85
-		local z = (slot // 2) * 0.82 - 0.82
-		b:PivotTo(pileOrigin * CFrame.new(x, layer * 0.31, z) * CFrame.Angles(0, rng:NextNumber(-0.06, 0.06), 0))
+		-- round 35: a smaller safe, so smaller bundles in a tighter stack
+		pcall(b.ScaleTo, b, 0.68)
+		local x = (slot % 2) * 1.16 - 0.58
+		local z = (slot // 2) * 0.56 - 0.56
+		b:PivotTo(pileOrigin * CFrame.new(x, layer * 0.21 - 0.05, z) * CFrame.Angles(0, rng:NextNumber(-0.06, 0.06), 0))
 		for _, p in ipairs(b:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
 		b.Parent = pile
 	end

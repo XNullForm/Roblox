@@ -36,7 +36,7 @@ gui.Parent = player:WaitForChild("PlayerGui")
 local function bar(top)
 	local f = Instance.new("Frame")
 	f.Name = top and "BarTop" or "BarBottom"
-	f.BackgroundColor3 = Color3.fromRGB(6, 6, 10)
+	f.BackgroundColor3 = Color3.fromRGB(9, 9, 10)
 	f.BorderSizePixel = 0
 	f.AnchorPoint = Vector2.new(0, top and 0 or 1)
 	f.Position = UDim2.fromScale(0, top and 0 or 1)
@@ -100,13 +100,13 @@ accent.Size = UDim2.fromOffset(0, 4)
 accent.ZIndex = 4
 accent.Parent = card
 local title = label("Name", "", 68, UI.F.display, Color3.new(1, 1, 1), 40, 76)
-local sub = label("Sub", "", 26, UI.F.bold, Color3.fromRGB(236, 232, 255), 118, 32)
+local sub = label("Sub", "", 26, UI.F.bold, Color3.fromRGB(249, 252, 255), 118, 32)
 local quote = label("Quote", "", 24, UI.F.italic, Color3.fromRGB(255, 240, 210), 154, 30)
 
 local skip = Instance.new("TextButton")
 skip.Name = "Skip"
 skip.AutoButtonColor = false
-skip.BackgroundColor3 = Color3.fromRGB(20, 18, 30)
+skip.BackgroundColor3 = Color3.fromRGB(26, 27, 30)
 skip.BackgroundTransparency = 0.35
 skip.AnchorPoint = Vector2.new(1, 0)
 skip.Position = UDim2.new(1, -28, 0, 0)
@@ -114,7 +114,7 @@ skip.Size = UDim2.fromOffset(112, 40)
 skip.Text = "SKIP  >>"
 skip.TextSize = 18
 skip.FontFace = UI.F.heavy
-skip.TextColor3 = Color3.fromRGB(240, 238, 255)
+skip.TextColor3 = Color3.fromRGB(251, 252, 255)
 skip.ZIndex = 5
 skip.Parent = gui
 do
@@ -238,12 +238,32 @@ rp.FilterType = Enum.RaycastFilterType.Exclude
 -- keep the camera on the near side of anything between it and what it's looking at: walls, trees, lamps and other
 -- people (only the subject is ignored, so nobody's head ever fills the shot)
 local subject
+-- round 35: when something blocks the shot, swing round the subject (and up a little) to the clearest angle
+-- instead of pulling in until the camera sits inside their coat
+local SWING = { 0, 35, -35, 70, -70, 110, -110, 180 }
+local lastSwing
 local function clear(from, to)
 	rp.FilterDescendantsInstances = subject and { subject } or {}
 	local d = to - from
-	local hit = workspace:Raycast(from, d, rp)
-	if hit then return from + d.Unit * math.max(1.5, hit.Distance - 0.8) end
-	return to
+	if not workspace:Raycast(from, d, rp) then return to end
+	local best, bestD = nil, -1
+	local function try(deg, lift)
+		local dd = CFrame.Angles(0, math.rad(deg), 0):VectorToWorldSpace(d) + Vector3.new(0, lift, 0)
+		local hit = workspace:Raycast(from, dd, rp)
+		if not hit then return dd end
+		if hit.Distance > bestD then best, bestD = dd, hit.Distance end
+		return nil
+	end
+	-- the angle that worked last frame first, so the shot doesn't flick between angles
+	local ok = lastSwing and try(lastSwing[1], lastSwing[2])
+	if ok then return from + ok end
+	for _, deg in ipairs(SWING) do
+		for _, lift in ipairs({ 0, 3 }) do
+			ok = try(deg, lift)
+			if ok then lastSwing = { deg, lift } return from + ok end
+		end
+	end
+	return from + best.Unit * math.max(1.5, bestD - 0.8)
 end
 
 local function ease(x) x = math.clamp(x, 0, 1) return x * x * (3 - 2 * x) end
@@ -432,6 +452,58 @@ local function runGrade(d)
 	end)
 end
 
+---------------------------------------------------------------- the intro story (round 20)
+-- Notify "cutscene" { kind = "intro" }: four shots that tell how you came to own the Seabreeze (the sea front, the
+-- boulevard, the run-down hotel, its door), each with a title card. Sent by Tutorial to first-time players and by
+-- the /intro command; when it ends (or can't play) the client fires TutSkip "introDone" so the tutorial can start.
+local introSerial = 0
+local function runIntro(d)
+	local plots = workspace:FindFirstChild("Plots")
+	local hotel = plots and plots:FindFirstChild(player:GetAttribute("Plot") or "")
+	local hx = 0
+	if hotel and hotel:IsA("Model") then
+		local door = hotel:FindFirstChild("Doors")
+		hx = (door and door:IsA("Model") and door:GetBoundingBox() or hotel:GetBoundingBox()).Position.X
+	end
+	subject = nil
+	local V = Vector3.new
+	local function glide(a, b, la, lb, fov)
+		return function(t, k)
+			local e = ease(k)
+			return CFrame.lookAt(a:Lerp(b, e), la:Lerp(lb, e)), fov
+		end
+	end
+	local shots = {
+		{ 6.0, glide(V(hx - 230, 34, 350), V(hx - 120, 26, 330), V(hx - 40, 6, 150), V(hx + 20, 8, 110), 52), cut = true, follow = 2.5 },
+		{ 6.4, glide(V(hx - 150, 7, 96), V(hx - 60, 9, 99), V(hx + 20, 14, 70), V(hx + 30, 12, 40), 58), cut = true, follow = 3 },
+		{ 7.2, function(t, k)
+			local a = math.rad(-52 + 74 * ease(k))
+			local look = V(hx, 9, 22)
+			return CFrame.lookAt(look + V(math.sin(a) * 66, 17 - 5 * ease(k), math.cos(a) * 66), look), 46
+		end, cut = true, follow = 3 },
+		{ 5.6, glide(V(hx + 20, 10, 80), V(hx + 7, 7, 50), V(hx, 9, 30), V(hx, 8, 28), 44), cut = true, follow = 3 },
+	}
+	local CARDS = {
+		{ 0.9, "HARBOUR VIEW", "A sleepy seaside town", "Sun, sand, and one very old hotel." },
+		{ 6.9, "A LETTER ARRIVES", "Great-aunt Marigold's will", "\"To my favourite relative I leave the Seabreeze. Be kind to her.\"" },
+		{ 13.3, "THE SEABREEZE HOTEL", "She has seen better days", "Boarded windows. Weeds at the door. Not one guest in years." },
+		{ 20.4, "YOUR TURN", "Bring her back to life", "Check guests in, fix her up, and make her the grandest hotel on the coast." },
+	}
+	introSerial += 1
+	local my = introSerial
+	play(shots, function()
+		for i, c in ipairs(CARDS) do
+			if i > 1 then
+				task.delay(c[1] - 0.7, function() if my == introSerial and busy and not skipped then hideCard() end end)
+			end
+			task.delay(c[1], function()
+				if my == introSerial and busy and not skipped then showCard(c[2], c[3], c[4], nil) end
+			end)
+		end
+	end)
+	introSerial += 1
+end
+
 ---------------------------------------------------------------- incoming
 
 local function want(fn)
@@ -452,6 +524,12 @@ Notify.OnClientEvent:Connect(function(kind, data)
 		want(function()
 			if blocked() or not m.Parent then return end
 			runStar(data)
+		end)
+	elseif kind == "cutscene" and data.kind == "intro" then
+		want(function()
+			task.wait(1.5)
+			if not blocked() then runIntro(data) end
+			pcall(function() game.ReplicatedStorage.Shared.Remotes.TutSkip:FireServer("introDone") end)
 		end)
 	elseif kind == "gradeUp" then
 		want(function()
