@@ -226,8 +226,18 @@ function UI.sheen(o, strength)
 end
 
 -- round 21: no gloss any more; the (hidden) frame is still returned for older callers
+-- round 40: a soft highlight across the top of a surface (fades out downward)
 function UI.gloss(o, radius, strength)
-	return UI.new("Frame", { Name = "Gloss", Size = UDim2.new(), BackgroundTransparency = 1, Visible = false, Parent = o })
+	local g = UI.new("Frame", {
+		Name = "Gloss", Position = UDim2.fromOffset(3, 2), Size = UDim2.new(1, -6, 0.48, 0), BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0, ZIndex = (o:IsA("GuiObject") and o.ZIndex or 1) + 1, Active = false, Parent = o,
+	})
+	UI.corner(g, math.max((radius or 10) - 2, 0))
+	local gr = Instance.new("UIGradient")
+	gr.Rotation = 90
+	gr.Transparency = NumberSequence.new(1 - (strength or 0.32), 1)
+	gr.Parent = g
+	return g
 end
 
 -- round 21: no shine sweep; returns a do-nothing play()
@@ -604,16 +614,20 @@ function UI.panel(parent, size, pos, opts)
 		Parent = holder,
 	})
 	UI.corner(body, radius)
-	local rim = UI.rim(body, T.line, 1)
+	UI.grad(body, Color3.new(1, 1, 1), Color3.fromRGB(234, 240, 250), 90) -- round 40: a soft cool fade, not flat white
+	local rim = UI.rim(body, UI.shade(col, 0.55), 1)
 	rim.Name = "PanelRim"
 	rim.Transparency = 0
+	rim.Thickness = 2
 	if opts.title then
-		local head = UI.new("Frame", { Name = "Head", Size = UDim2.new(1, 0, 0, 64), BackgroundColor3 = T.ink, BackgroundTransparency = 1, ZIndex = 2, Parent = body })
+		local head = UI.new("Frame", { Name = "Head", Size = UDim2.new(1, 0, 0, 64), BackgroundColor3 = T.ink, BackgroundTransparency = 0, ZIndex = 2, Parent = body })
+		UI.grad(head, UI.shade(col, 0.8), Color3.new(1, 1, 1), 0) -- round 40: the header washes in from the panel's colour
 		UI.new("Frame", { Name = "Foot", Size = UDim2.new(), BackgroundTransparency = 1, Visible = false, Parent = head })
 		UI.new("Frame", { Name = "Rule", Size = UDim2.new(1, -36, 0, 1), Position = UDim2.new(0, 18, 1, -1), BackgroundColor3 = T.line, ZIndex = 4, Parent = head })
 		local tile = UI.new("Frame", { Name = "Tile", Size = UDim2.fromOffset(42, 42), Position = UDim2.new(0, 18, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1, ZIndex = 5, Parent = head })
-		local disc = UI.new("Frame", { Name = "Disc", Size = UDim2.fromScale(1, 1), BackgroundColor3 = UI.shade(col, 0.86), ZIndex = 5, Parent = tile })
+		local disc = UI.new("Frame", { Name = "Disc", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 5, Parent = tile })
 		UI.corner(disc, 11)
+		UI.rim(disc, UI.shade(col, 0.4), 2).Thickness = 2
 		if opts.icon then
 			UI.icon(disc, opts.icon, 30, { Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 6 })
 		else
@@ -707,12 +721,16 @@ function UI.button(parent, o)
 	b:SetAttribute("Kind", kindName)
 	local r = math.min(o.radius or 10, 10)
 	-- (Base and its rim are never drawn: older screens still look them up)
-	local base = UI.new("Frame", { Name = "Base", Size = UDim2.fromScale(1, 1), BackgroundColor3 = kind[2], BackgroundTransparency = 1, ZIndex = 1, Parent = b })
+	-- round 40: a raised button: the face sits on a darker lip, with a top-lit gradient and a gloss
+	local base = UI.new("Frame", { Name = "Base", Size = UDim2.fromScale(1, 1), BackgroundColor3 = kind[2], ZIndex = 1, Parent = b })
+	UI.corner(base, r)
 	local baseRim = UI.rim(base, kind[2], 1)
 	baseRim.Name = "BaseRim"
 	baseRim.Transparency = 1
-	local face = UI.new("Frame", { Name = "Face", Size = UDim2.fromScale(1, 1), BackgroundColor3 = kind[1], ZIndex = 2, Parent = b })
+	local face = UI.new("Frame", { Name = "Face", Size = UDim2.new(1, 0, 1, -4), BackgroundColor3 = kind[1], ZIndex = 2, Parent = b })
 	UI.corner(face, r)
+	UI.grad(face, Color3.new(1, 1, 1), Color3.fromRGB(222, 222, 222), 90)
+	UI.gloss(face, r, 0.28)
 	local rim = UI.rim(face, kind[2], 1)
 	rim.Name = "FaceRim"
 	rim.Transparency = UI.isLight(kind[1]) and 0 or 1
@@ -787,6 +805,7 @@ end
 function UI.setDisabled(b, off)
 	b:SetAttribute("Disabled", off or nil)
 	if b:FindFirstChild("Face") then UI.tween(b.Face, 0.15, { BackgroundTransparency = off and 0.6 or 0 }) end
+	if b:FindFirstChild("Base") then UI.tween(b.Base, 0.15, { BackgroundTransparency = off and 0.75 or 0 }) end
 	local row = b:FindFirstChild("Row")
 	if row then
 		for _, c in ipairs(row:GetChildren()) do

@@ -28,6 +28,7 @@ local IDENT = CFrame.identity
 local FAR = 130          -- studs: further NPCs are left to the Animator
 local STREET_FAR = 75    -- the same for the street crowd
 local TAG = "Bubble" -- every hotel NPC (guests, staff, buddies) carries it
+local PTAG = "PlayerPose" -- round 40: a player doing a minigame (server WorkPose sets Pose / WorkAt on their character)
 local BUSY = { mop = true, fix = true, cook = true, clean = true, desk = true, text = true, photo = true, read = true, eat = true, inspect = true,
 	makebed = true, scrub = true, wipe = true, dust = true, deskkeys = true }
 
@@ -45,13 +46,13 @@ local function startAct(st, name)
 	st.act, st.actT0, st.actRate = def, os.clock(), rng:NextNumber(0.94, 1.06)
 end
 
-local function track(model, street)
+local function track(model, street, isPlayer)
 	if rigs[model] or not model:IsA("Model") then return end
 	local rig = Lib.rig(model)
 	if not rig then
 		-- bodies arrive part by part while streaming; try again shortly
 		task.delay(1, function()
-			if model.Parent and not rigs[model] and CollectionService:HasTag(model, TAG) then track(model) end
+			if model.Parent and not rigs[model] and (CollectionService:HasTag(model, TAG) or CollectionService:HasTag(model, PTAG)) then track(model, street, isPlayer) end
 		end)
 		return
 	end
@@ -65,6 +66,7 @@ local function track(model, street)
 		root = model:FindFirstChild("HumanoidRootPart"),
 		lastSay = model:GetAttribute("SayN"),
 		street = street,
+		player = isPlayer, -- no face, no glances: only the work pose
 	}
 	st.conns = {
 		model:GetAttributeChangedSignal("Act"):Connect(function()
@@ -114,6 +116,9 @@ end
 
 for _, m in ipairs(CollectionService:GetTagged(TAG)) do task.spawn(track, m) end
 CollectionService:GetInstanceAddedSignal(TAG):Connect(function(m) track(m) end)
+for _, m in ipairs(CollectionService:GetTagged(PTAG)) do task.spawn(track, m, false, true) end
+CollectionService:GetInstanceAddedSignal(PTAG):Connect(function(m) track(m, false, true) end)
+CollectionService:GetInstanceRemovedSignal(PTAG):Connect(function(m) untrack(m) end)
 CollectionService:GetInstanceRemovedSignal(TAG):Connect(function(m)
 	local st = rigs[m]
 	if st and st.street then return end
@@ -686,7 +691,7 @@ local function step(st, now, dt, camPos, myHead)
 	local moving = root.AssemblyLinearVelocity.Magnitude > 2
 	local gazeY, gazeP
 	local talkLock = model:GetAttribute("LocalTalk")
-	if myHead and not frozen then
+	if myHead and not frozen and not st.player then
 		local to = (talkLock and camPos or myHead.Position) - (root.Position + V3(0, 1.6, 0))
 		local dd = to.Magnitude
 		local talking = st.sayAt and now - st.sayAt < 4
@@ -700,6 +705,7 @@ local function step(st, now, dt, camPos, myHead)
 			end
 		end
 	end
+	if st.player then gazeY, gazeP = 0, 0 end
 	if not gazeY then
 		if frozen then
 			st.gty, st.gtp, st.gy, st.gp = 0, 0, 0, 0
@@ -716,7 +722,7 @@ local function step(st, now, dt, camPos, myHead)
 	local k = 1 - exp(-dt * 7)
 	st.gy += (gazeY - st.gy) * k
 	st.gp += (gazeP - st.gp) * k
-	if dist < 60 then updateFace(st, model, now) end
+	if dist < 60 and not st.player then updateFace(st, model, now) end
 	-- a motion that keys the head owns it
 	local headBusy = math.max(pw * ((poseV.ny or poseV.nx) and 0.75 or 0), aw * ((actV.ny or actV.nx) and 0.85 or 0))
 	local gw = 1 - headBusy
