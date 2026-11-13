@@ -194,6 +194,20 @@ if not Achieve then
 end
 local claimGap = {}
 Achieve.OnServerInvoke = function(player, action, id)
+	if action == "tag" and type(id) == "string" then -- round 39: wear a tag ("" takes it off)
+		local hotel = PLOTS:FindFirstChild(player:GetAttribute("Plot") or "")
+		if not hotel or hotel:GetAttribute("Owner") ~= player.UserId then return false, "Tags come from your own hotel" end
+		local st = stateOf(hotel)
+		if id == "" then
+			st.title = nil
+		elseif Q.TITLES[id] and (tonumber(st.ach[id]) or 0) > 0 then
+			st.title = id
+		else
+			return false, "Claim its first tier to unlock it"
+		end
+		write(hotel, st)
+		return true
+	end
 	if action ~= "claim" or type(id) ~= "string" then return false, "?" end
 	local now = os.clock()
 	if now < (claimGap[player] or 0) then return false, "Slow down" end
@@ -208,12 +222,124 @@ Achieve.OnServerInvoke = function(player, action, id)
 	local tier = have + 1
 	if tier > #a.tiers or Q.tierOf(a, v) < tier then return false, "Not yet!" end
 	st.ach[id] = tier
+	local newTag = tier == 1 and Q.TITLES[id] or nil
+	if newTag and not st.title then st.title = id end -- the first tag goes straight on
 	write(hotel, st)
 	local cash = a.cash[tier] or 0
 	player:SetAttribute("Cash", (player:GetAttribute("Cash") or 0) + cash)
 	player:SetAttribute("Earned", (player:GetAttribute("Earned") or 0) + cash)
 	local xp = a.xp and a.xp[tier] or 0
 	if xp > 0 then task.defer(Levels.award, hotel, xp, "Achievement") end
-	return true, { tier = tier, cash = cash, xp = xp }
+	return true, { tier = tier, cash = cash, xp = xp, tag = newTag }
 end
 Players.PlayerRemoving:Connect(function(p) claimGap[p] = nil end)
+
+---------------------------------------------------------------- round 39: minigame extras
+-- HotelSim reports every finished minigame on Signals.Minigame (hotel, player, kind, stars, secs, bonus). Three
+-- stars in a row builds a hot streak (player attribute MGStreak) that pays from x2; a grabbed bonus coin pays
+-- Q.mgCoin(level); the hotel keeps each game's best time in state.best (the result card shows it).
+local MG_KINDS = { Floor = true, Bed = true, Shower = true, Toilet = true, CheckIn = true, CheckOut = true, Cook = true, Repair = true }
+local MGSig = SIGNALS:FindFirstChild("Minigame") or Instance.new("BindableEvent")
+MGSig.Name = "Minigame"
+MGSig.Parent = SIGNALS
+MGSig.Event:Connect(function(hotel, player, kind, stars, secs, bonus)
+	if not MG_KINDS[kind] or not player.Parent then return end
+	local streak = stars >= 3 and (player:GetAttribute("MGStreak") or 0) + 1 or 0
+	player:SetAttribute("MGStreak", streak)
+	local pay = (streak >= 2 and math.min(streak, Q.MG.cap) * Q.MG.streak or 0) + (bonus and Q.mgCoin(hotel:GetAttribute("Level")) or 0)
+	if pay > 0 then
+		player:SetAttribute("Cash", (player:GetAttribute("Cash") or 0) + pay)
+		player:SetAttribute("Earned", (player:GetAttribute("Earned") or 0) + pay)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root then Notify:FireClient(player, "paid", { amount = pay, pos = root.Position + Vector3.new(0, 3, 0) }) end
+	end
+	if secs and secs >= C.MINIGAME_MIN and secs <= C.MINIGAME_TIMEOUT then
+		local st = stateOf(hotel)
+		st.best = type(st.best) == "table" and st.best or {}
+		secs = math.floor(secs * 10 + 0.5) / 10
+		local b = tonumber(st.best[kind])
+		if not b or secs < b then
+			st.best[kind] = secs
+			write(hotel, st)
+		end
+	end
+end)
+
+---------------------------------------------------------------- round 39: tags over the head
+-- The owner's worn tag (state.title) goes on the player as attributes Tag / TagTier (Bubbles prints it in front
+-- of their chat) and as a pill just above their name. A co-op member away from their own hotel keeps theirs.
+local TAG_FONT = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Heavy)
+local function tagOf(player)
+	for _, hotel in ipairs(PLOTS:GetChildren()) do
+		if hotel:GetAttribute("Owner") == player.UserId and hotel:FindFirstChild("Rooms") then
+			local st = stateOf(hotel)
+			local tier = st.title and math.clamp(tonumber(st.ach[st.title]) or 0, 0, 3) or 0
+			if tier > 0 and Q.TITLES[st.title] then return true, Q.TITLES[st.title], tier end
+			return true, nil, nil
+		end
+	end
+	return false
+end
+local function wearTag(player)
+	local head = player.Character and player.Character:FindFirstChild("Head")
+	if not head then return end
+	local text, tier = player:GetAttribute("Tag"), player:GetAttribute("TagTier") or 1
+	local bb = head:FindFirstChild("TagGui")
+	local key = text and (text .. tier)
+	if bb and bb:GetAttribute("Key") == key then return end
+	if bb then bb:Destroy() end
+	if not text then return end
+	bb = Instance.new("BillboardGui")
+	bb.Name = "TagGui"
+	bb:SetAttribute("Key", key)
+	bb.Size = UDim2.fromOffset(240, 24)
+	bb.StudsOffset = Vector3.new(0, 1.55, 0)
+	bb.SizeOffset = Vector2.new(0, 1.45) -- pixels above the name, so it never slides onto it far away
+	bb.MaxDistance = 90
+	bb.LightInfluence = 0
+	local col = Q.TAG_COL[tier] or Q.TAG_COL[1]
+	local pill = Instance.new("TextLabel")
+	pill.AnchorPoint = Vector2.new(0.5, 0.5)
+	pill.Position = UDim2.fromScale(0.5, 0.5)
+	pill.Size = UDim2.fromOffset(0, 22)
+	pill.AutomaticSize = Enum.AutomaticSize.X
+	pill.BackgroundColor3 = col
+	pill.Text = string.upper(text)
+	pill.TextColor3 = Color3.new(1, 1, 1)
+	pill.TextSize = 15
+	pill.FontFace = TAG_FONT
+	pill.Parent = bb
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft, pad.PaddingRight = UDim.new(0, 10), UDim.new(0, 10)
+	pad.Parent = pill
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = pill
+	local rim = Instance.new("UIStroke")
+	rim.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	rim.Thickness = 2
+	rim.Color = col:Lerp(Color3.new(0, 0, 0), 0.4)
+	rim.Parent = pill
+	local ts = Instance.new("UIStroke")
+	ts.Thickness = 1.5
+	ts.Color = col:Lerp(Color3.new(0, 0, 0), 0.55)
+	ts.Parent = pill
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(200, 200, 200))
+	g.Rotation = 90
+	g.Parent = pill
+	bb.Parent = head
+end
+task.spawn(function()
+	while true do
+		for _, p in ipairs(Players:GetPlayers()) do
+			local owns, text, tier = tagOf(p)
+			if owns then
+				if p:GetAttribute("Tag") ~= text then p:SetAttribute("Tag", text) end
+				if p:GetAttribute("TagTier") ~= tier then p:SetAttribute("TagTier", tier) end
+			end
+			pcall(wearTag, p)
+		end
+		task.wait(1)
+	end
+end)

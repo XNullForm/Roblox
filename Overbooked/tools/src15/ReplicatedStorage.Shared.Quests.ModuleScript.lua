@@ -170,6 +170,19 @@ function Q.rollSide(level, active, n, rng)
 		cash = math.floor(d.cash * k * (0.8 + goal / d.goal[2] * 0.4) / 5 + 0.5) * 5, xp = 8 + math.min(40, level or 1),
 	}
 end
+-- round 39: tags. Claiming an achievement's first tier unlocks its tag; the owner wears one over their name and
+-- in chat (QuestServer). Its colour is the highest tier claimed (TAG_COL, Bronze / Silver / Gold).
+Q.TITLES = {
+	greeter = "Doorman", desk = "Desk Ace", served = "Crowd Pleaser", spotless = "Neat Freak", earner = "Tycoon",
+	collector = "Money Bags", fivestar = "Five-Star Host", chatty = "Chatterbox", designer = "Decorator",
+	scientist = "Mad Scientist", hotelier = "Hotelier", rated = "Critics Darling", jobs = "Handyman",
+	finder = "Detective", wrangler = "Pet Whisperer", tipped = "Tip Magnet", tidy = "Mop Master",
+}
+Q.TAG_COL = { Color3.fromRGB(205, 127, 74), Color3.fromRGB(150, 164, 190), Color3.fromRGB(232, 176, 48) }
+-- round 39: minigame extras (QuestServer pays, Minigames shows): three stars in a row is a hot streak worth
+-- `streak` per step from x2 (up to x`cap`); a bonus coin that pops up mid-game is worth mgCoin(level)
+Q.MG = { streak = 10, cap = 10, coinChance = 0.4 }
+function Q.mgCoin(level) return 20 + 3 * math.min(level or 1, 60) end
 Q.ACH_BY_ID = {}
 for _, a in ipairs(Q.ACHIEVEMENTS) do Q.ACH_BY_ID[a.id] = a end
 

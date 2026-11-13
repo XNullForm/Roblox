@@ -1027,7 +1027,7 @@ do
 				local ok, res, info = pcall(Achieve.InvokeServer, Achieve, "claim", a.id)
 				if ok and res then
 					UI.sound("Fanfare")
-					mtoast(a.name .. " " .. Q.TIER_NAMES[info.tier] .. "! +$" .. UI.commas(info.cash), "trophy")
+					mtoast(a.name .. " " .. Q.TIER_NAMES[info.tier] .. "! +$" .. UI.commas(info.cash) .. (info.tag and (". New tag: " .. info.tag) or ""), "trophy")
 				else
 					mtoast(ok and tostring(info) or "Try again", "close", true)
 					UI.shake(b)
@@ -1035,7 +1035,23 @@ do
 				task.delay(0.3, refreshAch)
 			end,
 		})
-		achCards[a.id] = { a = a, frame = f, mIcon = mIcon, pips = pipList, tierTag = tierTag, desc = desc, fill = fill, prog = prog, btn = btn, btnText = btnText, order = i }
+		-- round 39: the tag this achievement unlocks; tap to wear it (or take it off)
+		local tagChip = UI.new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(170, 18), Position = UDim2.fromOffset(384, 46), BackgroundColor3 = T.ink3, Parent = f })
+		UI.corner(tagChip, 9)
+		local tagText = UI.label(tagChip, "", 11, { FontFace = UI.F.heavy, TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), TextTruncate = Enum.TextTruncate.AtEnd })
+		tagChip.Activated:Connect(function()
+			local c = achCards[a.id]
+			if not c.tagOk then UI.shake(tagChip) mtoast("Claim " .. a.name .. " Bronze to unlock this tag", "close", true) return end
+			local ok, res, why = pcall(Achieve.InvokeServer, Achieve, "tag", c.wearing and "" or a.id)
+			if ok and res then
+				UI.sound("select")
+				mtoast(c.wearing and "Tag taken off" or ("Now wearing " .. Q.TITLES[a.id]), "medal")
+			else
+				mtoast(ok and tostring(why) or "Try again", "close", true)
+			end
+			task.delay(0.3, refreshAch)
+		end)
+		achCards[a.id] = { a = a, frame = f, mIcon = mIcon, pips = pipList, tierTag = tierTag, desc = desc, fill = fill, prog = prog, btn = btn, btnText = btnText, order = i, tagChip = tagChip, tagText = tagText }
 	end
 
 	refreshAch = function()
@@ -1055,6 +1071,13 @@ do
 				pip.BackgroundColor3 = k <= claimed and TIER_COL[k] or T.ink3
 			end
 			c.mIcon.ImageTransparency = claimed > 0 and 0 or 0.4
+			local tagName = string.upper(Q.TITLES[a.id] or a.name)
+			c.tagOk = claimed > 0 and isOwner
+			c.wearing = st.title == a.id
+			c.tagText.Text = c.wearing and ("WEARING: " .. tagName) or claimed > 0 and ("WEAR TAG: " .. tagName) or ("TAG: " .. tagName)
+			c.tagText.TextColor3 = claimed > 0 and Color3.new(1, 1, 1) or T.muted
+			c.tagChip.BackgroundColor3 = claimed > 0 and (Q.TAG_COL[claimed] or TIER_COL[claimed]) or T.ink3
+			c.tagChip.BackgroundTransparency = (claimed > 0 and not c.wearing) and 0.35 or 0
 			local nextTier = claimed + 1
 			local kind
 			if nextTier > 3 then

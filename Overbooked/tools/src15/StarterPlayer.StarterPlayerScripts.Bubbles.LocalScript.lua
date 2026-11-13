@@ -32,10 +32,10 @@ end
 local HEAR = 48 -- you hear (and read) people within this many studs
 local TAG_FAR = 46 -- staff tags
 local FAR = 80 -- status discs
-local SAY_W = 250
+local SAY_W = 310 -- round 32: bigger bubbles
 local TAGS = {
 	Color3.fromRGB(240, 96, 86), Color3.fromRGB(47, 155, 255), Color3.fromRGB(26, 188, 140), Color3.fromRGB(244, 150, 40),
-	Color3.fromRGB(150, 98, 236), Color3.fromRGB(20, 170, 180), Color3.fromRGB(240, 80, 178), Color3.fromRGB(108, 76, 241),
+	Color3.fromRGB(98, 166, 236), Color3.fromRGB(20, 170, 180), Color3.fromRGB(240, 80, 178), Color3.fromRGB(76, 157, 241),
 }
 local BAR = { yellow = T.sun, blue = T.blue, purple = T.brand, green = T.green, red = T.red }
 
@@ -57,7 +57,7 @@ local function moodOf(model)
 end
 
 -- text sizes for the bubble (Builder Sans; falls back to a Gotham estimate if the async measure fails)
-local SAY_SIZE = 17
+local SAY_SIZE = 22
 local function measure(text, width)
 	local ok, v = pcall(function()
 		local p = Instance.new("GetTextBoundsParams")
@@ -79,8 +79,8 @@ local function fitBubble(line)
 end
 
 local BUB_TOP = Color3.new(1, 1, 1)
-local BUB_BOT = Color3.fromRGB(238, 234, 252)
-local BUB_RIM = Color3.fromRGB(206, 198, 244)
+local BUB_BOT = Color3.fromRGB(248, 249, 252)
+local BUB_RIM = Color3.fromRGB(233, 237, 244)
 -- a speech bubble: a glossy white card with a soft lavender rim, a curved tail (rim and fill images stacked so
 -- the outline runs round it) and a name chip on its top-left corner. Returns the parts.
 local function makeBubble(parent, order)
@@ -100,7 +100,7 @@ local function makeBubble(parent, order)
 	local tailFill = UI.new("ImageLabel", { Image = UI.IMG.tailFill, ImageColor3 = BUB_BOT, Size = UDim2.fromOffset(32, 23), Position = UDim2.new(0.5, -24, 1, -17), ZIndex = 4, Parent = pop })
 	local text = UI.new("TextLabel", {
 		Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 1, -20), Text = "", TextSize = SAY_SIZE, FontFace = UI.F.bold,
-		TextColor3 = T.cream, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 5, Parent = box,
+		TextColor3 = T.cream, TextWrapped = true, RichText = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 5, Parent = box,
 	})
 	local who = UI.chip(pop, "", T.brand, { TextSize = 14, Size = UDim2.fromOffset(0, 22), AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.fromOffset(12, 0), ZIndex = 6 })
 	-- the three dots while the voice loads
@@ -128,13 +128,35 @@ end
 
 local marks = {} -- model -> m
 
+-- round 32: a capital first letter, and names, rooms and money in colour + underlined (RichText)
+local function hl(s) return '<font color="#6C4BF4"><u>' .. s .. '</u></font>' end
+local function tidy(line)
+	return (line:gsub("^(%W*)(%l)", function(a, b) return a .. b:upper() end))
+end
+local function richLine(line)
+	local s = line:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+	s = s:gsub("%$[%d,%.]+", hl)
+	s = s:gsub("[Rr]oom %d+", hl)
+	local names = {}
+	for mm, mk in pairs(marks) do
+		local n = type(mk) == "table" and mm:GetAttribute("BName")
+		local f = n and n:match("^(%a+)")
+		if f and #f > 2 then names[f] = true end
+	end
+	for _, p in ipairs(Players:GetPlayers()) do names[p.DisplayName] = true end
+	for f in pairs(names) do
+		s = s:gsub("%f[%w]" .. f:gsub("%p", "%%%0") .. "%f[%W]", hl)
+	end
+	return s
+end
+
 local function build(model)
 	local head = model:FindFirstChild("Head") or model:WaitForChild("Head", 5)
 	if not head or not model.Parent then return end
 	local m = { model = model, head = head }
 	-- the gui's bottom edge sits just over the head; everything stacks up from there
 	local bb = UI.new("BillboardGui", {
-		Name = "Bubble", Size = UDim2.fromOffset(340, 260), SizeOffset = Vector2.new(0, 0.5), StudsOffset = Vector3.new(0, 1.9, 0),
+		Name = "Bubble", Size = UDim2.fromOffset(400, 300), SizeOffset = Vector2.new(0, 0.5), StudsOffset = Vector3.new(0, 1.9, 0),
 		AlwaysOnTop = true, LightInfluence = 0, MaxDistance = FAR, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Adornee = head,
 		Enabled = not hiddenAll(), Parent = pgui,
 	})
@@ -151,7 +173,7 @@ local function build(model)
 	UI.list(tag, Enum.FillDirection.Vertical, -4, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Bottom)
 	local top = UI.new("Frame", { Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = T.white, LayoutOrder = 1, ZIndex = 2, Parent = tag })
 	UI.corner(top, UDim.new(0.5, 0))
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(232, 228, 250)), Parent = top })
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(244, 247, 250)), Parent = top })
 	local topRim = UI.rim(top, T.brand, 2.5)
 	UI.pad(top, 12, 0, 5, 0)
 	UI.list(top, Enum.FillDirection.Horizontal, 7, nil, Enum.VerticalAlignment.Center)
@@ -170,11 +192,11 @@ local function build(model)
 	local discGlow = UI.glow(discSlot, 90, T.white, { ImageTransparency = 0.45 })
 	local disc = UI.new("Frame", { Size = UDim2.fromOffset(50, 50), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = T.white, ZIndex = 2, Parent = discSlot })
 	UI.corner(disc, UDim.new(0.5, 0))
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(226, 222, 246)), Parent = disc })
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(240, 242, 246)), Parent = disc })
 	UI.rim(disc, BUB_RIM, 2)
 	local track = UI.new("Frame", { Size = UDim2.fromOffset(42, 42), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, ZIndex = 2, Parent = disc })
 	UI.corner(track, UDim.new(0.5, 0))
-	UI.rim(track, Color3.fromRGB(230, 226, 248), 4)
+	UI.rim(track, Color3.fromRGB(243, 245, 248), 4)
 	local _, setRing, ringStrokes = UI.ring(disc, 46, 4, T.green, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), ZIndex = 3 })
 	local icon = UI.icon(disc, "", 32, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), ZIndex = 4 })
 	local badge = UI.badge(disc, 24, T.sun, nil, { Position = UDim2.new(1, 6, 0, -6), AnchorPoint = Vector2.new(1, 0), Visible = false, ZIndex = 5 })
@@ -211,7 +233,7 @@ local function build(model)
 	end
 	local function refreshStatus()
 		local ic = model:GetAttribute("BIcon")
-		local show = ic ~= nil and ICON[ic] ~= nil
+		local show = m.staff and ic ~= nil and ICON[ic] ~= nil -- round 32: guests show no status disc
 		if show and not discSlot.Visible then UI.pop(disc, 0.4, 0.4) end
 		discSlot.Visible = show
 		icon.Image = show and ICON[ic] or ""
@@ -226,6 +248,7 @@ local function build(model)
 		if m.sayN == n then saySlot.Visible = false end
 	end
 	local function say(line, secs, voiceOpts)
+		line = tidy(line)
 		m.sayN = (m.sayN or 0) + 1
 		local n = m.sayN
 		local name = model:GetAttribute("BName") or model.Name
@@ -241,7 +264,7 @@ local function build(model)
 		-- fit the bubble to the line
 		local w, h = fitBubble(line)
 		saySlot.Size = UDim2.fromOffset(w, h)
-		sayText.Text = line
+		sayText.Text = richLine(line)
 		sayText.MaxVisibleGraphemes = 0
 		dots.Visible = true
 		saySlot.Visible = true
@@ -350,7 +373,7 @@ local function playerBubble(pl, text)
 	local rec = chatBubbles[char]
 	if not rec or not rec.bb.Parent then
 		local bb = UI.new("BillboardGui", {
-			Name = "ChatBubble", Size = UDim2.fromOffset(360, 220), SizeOffset = Vector2.new(0, 0.5), StudsOffset = Vector3.new(0, 1.9, 0),
+			Name = "ChatBubble", Size = UDim2.fromOffset(400, 300), SizeOffset = Vector2.new(0, 0.5), StudsOffset = Vector3.new(0, 1.9, 0),
 			LightInfluence = 0, MaxDistance = HEAR + 20, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Adornee = head, Parent = pgui,
 		})
 		local stack = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = bb })
@@ -371,7 +394,7 @@ local function playerBubble(pl, text)
 	local shown = #text > 140 and (text:sub(1, 137) .. "...") or text
 	local w, h = fitBubble(shown)
 	rec.slot.Size = UDim2.fromOffset(w, h)
-	rec.txt.Text = shown
+	rec.txt.Text = richLine(shown)
 	rec.txt.MaxVisibleGraphemes = 0
 	rec.slot.Visible = true
 	rec.sc.Scale = 0.3
@@ -403,6 +426,19 @@ pcall(function()
 			playerBubble(pl, msg.Text)
 		end
 	end)
+end)
+-- round 39: a player's worn tag (attributes Tag / TagTier, QuestServer) goes in front of their name in chat
+pcall(function()
+	local TAG_COL = require(Shared:WaitForChild("Quests")).TAG_COL
+	TextChatService.OnIncomingMessage = function(msg)
+		local src = msg.TextSource
+		local pl = src and Players:GetPlayerByUserId(src.UserId)
+		local tag = pl and pl:GetAttribute("Tag")
+		if not tag then return nil end
+		local props = Instance.new("TextChatMessageProperties")
+		props.PrefixText = string.format('<font color="#%s"><b>[%s]</b></font> %s', (TAG_COL[pl:GetAttribute("TagTier") or 1] or TAG_COL[1]):ToHex(), tag, msg.PrefixText)
+		return props
+	end
 end)
 
 ---------------------------------------------------------------- every frame: rings, the loading dots, size by distance
@@ -456,7 +492,7 @@ RunService.RenderStepped:Connect(function()
 					if hidden then task.delay(0.22, function() if m.blocked then m.fade.Visible = false end end) end
 				end
 			end
-			m.sc.Scale = math.clamp(1.14 - d / 100, 0.6, 1.05)
+			m.sc.Scale = math.clamp(1.14 - d / 100, 0.6, 1.05) * 0.72 -- round 21: smaller name tags
 			if m.staff then
 				local on = d < TAG_FAR and not model:GetAttribute("LocalTalk")
 				if m.tag.Visible ~= on then m.tag.Visible = on end

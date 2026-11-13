@@ -248,6 +248,133 @@ local function showBed(room, clean)
 	if room.throw then setShown(room.throw, clean) end
 end
 
+-- round 39: a dirty room looks it. Each job still to do puts grime on its fixture: stains cast onto the bed,
+-- shower or toilet itself (or the floor round the Floor spot), a cloud of flies, and a whiff of stink. The bits
+-- live in the room model (folder Grime_<task>), never in the placed furniture, and go when the job is done.
+local grime -- one local: the main chunk is at Luau's 200-local limit
+do
+local GRIME = {
+	Bed = { cols = { Color3.fromRGB(150, 118, 70), Color3.fromRGB(120, 100, 80), Color3.fromRGB(176, 156, 92) }, n = 7, stink = Color3.fromRGB(160, 170, 90) },
+	Shower = { cols = { Color3.fromRGB(96, 120, 70), Color3.fromRGB(116, 100, 72), Color3.fromRGB(74, 94, 62) }, n = 10, side = 0.6 },
+	Toilet = { cols = { Color3.fromRGB(156, 124, 40), Color3.fromRGB(112, 82, 42), Color3.fromRGB(134, 142, 52) }, n = 8, side = 0.4, stink = Color3.fromRGB(150, 182, 60) },
+	Floor = { cols = { Color3.fromRGB(92, 72, 52), Color3.fromRGB(124, 98, 62), Color3.fromRGB(74, 62, 50) }, n = 8 },
+}
+local grimeRng = Random.new()
+local grimeRay = RaycastParams.new()
+local function grimePart(parent, size, cf, color, transparency)
+	local p = Instance.new("Part")
+	p.Shape = Enum.PartType.Cylinder
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = Enum.Material.SmoothPlastic
+	p.Transparency = transparency
+	p.Anchored, p.CanCollide, p.CanQuery, p.CanTouch, p.CastShadow = true, false, false, false, false
+	p.Parent = parent
+	return p
+end
+function grime(room, task, on)
+	local old = room.model:FindFirstChild("Grime_" .. task)
+	if old then old:Destroy() end
+	local def, spot = GRIME[task], room.spots[task]
+	if not on or not def or not spot then return end
+	local target = task ~= "Floor" and core(room, task)
+	if task ~= "Floor" and not target then return end
+	local f = Instance.new("Folder")
+	f.Name = "Grime_" .. task
+	local cf, size
+	if target then
+		cf, size = target:GetBoundingBox()
+		grimeRay.FilterType = Enum.RaycastFilterType.Include
+		grimeRay.FilterDescendantsInstances = { target }
+	else
+		cf, size = CFrame.new(spot.Position), Vector3.new(10, 3, 10)
+		grimeRay.FilterType = Enum.RaycastFilterType.Exclude
+		grimeRay.FilterDescendantsInstances = { PLACED, room.mess, f }
+	end
+	local k = math.clamp(math.max(size.X, size.Z) / 6, 0.55, 1.3)
+	local floorY
+	local made, tries = 0, 0
+	while made < def.n and tries < def.n * 4 do
+		tries += 1
+		local from, dir
+		local lx, lz = grimeRng:NextNumber(-0.42, 0.42) * size.X, grimeRng:NextNumber(-0.42, 0.42) * size.Z
+		if def.side and grimeRng:NextNumber() < def.side then -- in from a side, onto glass and bowls
+			local a = grimeRng:NextNumber(0, math.pi * 2)
+			local y = grimeRng:NextNumber(-0.35, 0.3) * size.Y
+			from = cf * Vector3.new(math.cos(a) * size.X, y, math.sin(a) * size.Z)
+			dir = (cf * Vector3.new(lx * 0.3, y, lz * 0.3) - from)
+		elseif target then
+			from = cf * Vector3.new(lx, size.Y / 2 + 1, lz)
+			dir = Vector3.new(0, -(size.Y + 2), 0)
+		else
+			from = spot.Position + Vector3.new(lx, 2.5, lz)
+			dir = Vector3.new(0, -9, 0)
+		end
+		local hit = workspace:Raycast(from, dir, grimeRay)
+		local model = hit and hit.Instance:FindFirstAncestorWhichIsA("Model")
+		local ok = hit and not (model and model:FindFirstChildOfClass("Humanoid"))
+		if ok and target and dir.Y < 0 then ok = hit.Position.Y <= cf.Y + size.Y * 0.2 end -- not on headboard or frame tops
+		if ok and not target then -- the floor only: flat, and at the floor's height
+			floorY = floorY or hit.Position.Y
+			ok = hit.Normal.Y > 0.9 and math.abs(hit.Position.Y - floorY) < 0.3
+		end
+		if ok then
+			made += 1
+			local n = hit.Normal
+			local up = math.abs(n.Y) < 0.9 and Vector3.yAxis or Vector3.xAxis
+			local at = CFrame.fromMatrix(hit.Position + n * 0.03, n, n:Cross(up).Unit)
+			local col = def.cols[grimeRng:NextInteger(1, #def.cols)]
+			local d = grimeRng:NextNumber(0.55, 1.25) * k
+			grimePart(f, Vector3.new(0.04, d, d), at, col, grimeRng:NextNumber(0.05, 0.3))
+			for _ = 1, grimeRng:NextInteger(1, 3) do -- splatters round it make it a blob, not a coin
+				local s = d * grimeRng:NextNumber(0.25, 0.55)
+				local off = at * CFrame.new(0.005, grimeRng:NextNumber(-0.6, 0.6) * d, grimeRng:NextNumber(-0.6, 0.6) * d)
+				grimePart(f, Vector3.new(0.04, s, s), off, col:Lerp(Color3.new(0, 0, 0), 0.12), grimeRng:NextNumber(0.1, 0.35))
+			end
+		end
+	end
+	-- the flies and the stink hang over it
+	local top = Instance.new("Part")
+	top.Name = "Air"
+	top.Size = Vector3.new(0.2, 0.2, 0.2)
+	top.Position = target and (cf.Position + Vector3.new(0, size.Y / 2 + 0.6, 0)) or (spot.Position + Vector3.new(0, 1, 0))
+	top.Transparency = 1
+	top.Anchored, top.CanCollide, top.CanQuery, top.CanTouch = true, false, false, false
+	top.Parent = f
+	local flies = Instance.new("ParticleEmitter")
+	flies.Name = "Flies"
+	flies.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	flies.Color = ColorSequence.new(Color3.fromRGB(20, 20, 16))
+	flies.LightEmission = 0
+	flies.LightInfluence = 0
+	flies.Size = NumberSequence.new(0.22)
+	flies.Lifetime = NumberRange.new(0.8, 1.4)
+	flies.Speed = NumberRange.new(2.5, 4.5)
+	flies.SpreadAngle = Vector2.new(180, 180)
+	flies.Drag = 2.5
+	flies.RotSpeed = NumberRange.new(-400, 400)
+	flies.Rate = task == "Floor" and 5 or 9
+	flies.Parent = top
+	if def.stink then
+		local stink = Instance.new("ParticleEmitter")
+		stink.Name = "Stink"
+		stink.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		stink.Color = ColorSequence.new(def.stink)
+		stink.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.35, 0.6), NumberSequenceKeypoint.new(1, 1) })
+		stink.Size = NumberSequence.new(0.8, 2.4)
+		stink.Lifetime = NumberRange.new(2, 3)
+		stink.Speed = NumberRange.new(0.8, 1.4)
+		stink.EmissionDirection = Enum.NormalId.Top
+		stink.SpreadAngle = Vector2.new(25, 25)
+		stink.RotSpeed = NumberRange.new(-30, 30)
+		stink.Rate = 3
+		stink.Parent = top
+	end
+	f.Parent = room.model
+end
+end
+
 local function setRoomState(room, state)
 	room.state = state
 	room.model:SetAttribute("State", state)
@@ -258,6 +385,7 @@ local function setRoomState(room, state)
 		local need = dirty and room.tasks[name]
 		prompt.Enabled = need and true or false
 		room.dust[name].Enabled = need and true or false
+		grime(room, name, need)
 	end
 	roomCounts()
 	-- round 10e: the save keeps which rooms were left dirty
@@ -650,12 +778,19 @@ local function startCleaning(player, room, task)
 	end)
 end
 
-table.insert(conns, RS.Shared.Remotes.CleanDone.OnServerEvent:Connect(function(player, cancel, stars)
+table.insert(conns, RS.Shared.Remotes.CleanDone.OnServerEvent:Connect(function(player, cancel, stars, info)
+	-- round 39: info = { kind, secs, bonus } feeds the streaks, bonus coins and best times (QuestServer)
+	info = type(info) == "table" and info or {}
+	local function report(kind)
+		local sig = game.ServerStorage.Signals:FindFirstChild("Minigame")
+		if sig then sig:Fire(HOTEL, player, kind, math.clamp(math.floor(tonumber(stars) or 1), 1, 3), tonumber(info.secs), info.bonus == true) end
+	end
 	local dg = deskGames[player]
 	if dg then
 		deskGames[player] = nil
 		local ok = not cancel and os.clock() - dg.t0 >= C.DESK_GAME_MIN and isMember(player)
 		dg.done(ok, ok and math.clamp(math.floor(tonumber(stars) or 1), 1, 3) or 0)
+		if ok and type(info.kind) == "string" then report(info.kind) end
 		return
 	end
 	local s = cleaning[player]
@@ -672,6 +807,7 @@ table.insert(conns, RS.Shared.Remotes.CleanDone.OnServerEvent:Connect(function(p
 	end
 	cleaning[player] = nil
 	if room.state == "Dirty" and room.tasks[task] and room.clean(task, player) then
+		report(task)
 		-- a quick, tidy job earns a little extra (the minigame shows three stars under par)
 		local par = C.MINIGAME_PAR[task]
 		if par and took <= par then
@@ -952,6 +1088,7 @@ local function addRoom(m)
 		Levels.award(HOTEL, Levels.XP.clean, "Cleaning", spot.Position)
 		room.prompts[task].Enabled = false
 		room.dust[task].Enabled = false
+		grime(room, task, false)
 		sparkleBurst(spot.Position)
 		if task == "Bed" then
 			showBed(room, true)
@@ -1084,6 +1221,9 @@ local function syncRoom(room)
 	end
 	local head = coreSpot(room, "Shower", "head")
 	if head then room.showerHead.WorldPosition = head end
+	if room.state == "Dirty" then -- round 39: the grime follows furniture that moved
+		for _, t in ipairs(C.TASKS) do if room.tasks[t] then grime(room, t, true) end end
+	end
 	local appeal = Build.appeal(room.model.Name, HOTEL)
 	room.model:SetAttribute("Appeal", appeal)
 	local nightly = C.ROOM_PRICE + C.ROOM_TIERS[tierOf(room)].bonus + appeal * Catalog.PRICE_PER_APPEAL
